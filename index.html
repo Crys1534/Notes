@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YT Script Writer Pro v13.3 - Cloud Sync (Import Fix)</title>
+    <title>YT Script Writer Pro v14 - Classic Flow & Drag Drop</title>
     
     <!-- FIREBASE COMPAT (Sincronización en la Nube) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -44,18 +44,13 @@
             50% { background-color: #3d3d3d; }
             100% { background-color: #2a2a2a; }
         }
-        .skeleton {
-            animation: skeleton-glow 1.5s ease-in-out infinite;
-            border-radius: 4px;
-        }
+        .skeleton { animation: skeleton-glow 1.5s ease-in-out infinite; border-radius: 4px; }
         .skel-text { height: 14px; margin-bottom: 12px; width: 100%; }
         .skel-text.short { width: 60%; }
         .skel-title { height: 22px; width: 80%; margin-bottom: 20px; }
         .skel-card { 
-            padding: 20px; border-radius: 12px; 
-            border: 1px solid var(--border-color); 
-            background-color: var(--surface-color); 
-            height: 250px; display: flex; flex-direction: column;
+            padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); 
+            background-color: var(--surface-color); height: 250px; display: flex; flex-direction: column;
         }
         .skel-footer { margin-top: auto; height: 12px; width: 40%; }
         .skel-sidebar-item { display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-bottom: 1px solid var(--border-color); }
@@ -69,28 +64,34 @@
         button:hover { filter: brightness(1.2); }
         .btn-primary { background-color: var(--accent-color); color: #fff; border: none; font-weight: bold; padding: 10px 20px; font-size: 1rem; }
         .btn-small { padding: 4px 8px; font-size: 0.85rem; }
+        .btn-secondary { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); font-weight: bold; padding: 10px 20px; font-size: 1rem; }
+        .btn-secondary:hover { background: var(--toolbar-bg); }
 
         /* --- BARRA LATERAL (SIDEBAR) --- */
         #sidebar {
-            width: var(--sidebar-width-expanded);
-            background-color: var(--surface-color);
-            border-right: 1px solid var(--border-color);
-            display: flex; flex-direction: column;
-            transition: width 0.3s ease;
-            z-index: 50;
+            width: var(--sidebar-width-expanded); background-color: var(--surface-color);
+            border-right: 1px solid var(--border-color); display: flex; flex-direction: column;
+            transition: width 0.3s ease; z-index: 50;
         }
         #sidebar.collapsed { width: var(--sidebar-width-collapsed); }
         
-        .sidebar-header {
-            padding: 15px; border-bottom: 1px solid var(--border-color);
-            display: flex; align-items: center; gap: 15px; white-space: nowrap; overflow: hidden;
-        }
+        .sidebar-header { padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px; white-space: nowrap; overflow: hidden; }
         .btn-hamburger { background: transparent; border: none; font-size: 1.5rem; color: var(--text-color); padding: 0; display: flex; justify-content: center; width: 30px; }
         .sidebar-title { font-weight: bold; font-size: 1.2rem; }
         
+        .sidebar-notes-list { flex: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
+        .sidebar-note-item { padding: 12px 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid var(--border-color); overflow: hidden; white-space: nowrap; }
+        .sidebar-note-item:hover { background-color: var(--toolbar-bg); }
+        .note-icon { width: 30px; text-align: center; font-size: 1.2rem; }
+        
+        .sidebar-tools { padding: 10px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .btn-side-tool { display: flex; align-items: center; gap: 15px; background: transparent; border: 1px solid var(--border-color); padding: 10px; color: var(--text-color); font-weight: bold; justify-content: flex-start; overflow: hidden; white-space: nowrap; }
+        .btn-side-tool:hover { background: var(--toolbar-bg); }
+
         .storage-section {
-            padding: 15px; border-bottom: 1px solid var(--border-color);
+            padding: 15px; border-top: 1px solid var(--border-color);
             display: flex; align-items: center; gap: 15px; overflow: hidden; white-space: nowrap;
+            margin-top: auto; /* MANDA ESTO HASTA ABAJO */
         }
         .storage-icon { font-size: 1.5rem; width: 30px; text-align: center; }
         .storage-details { flex: 1; display: flex; flex-direction: column; gap: 5px; }
@@ -98,62 +99,30 @@
         #storage-bar { width: 0%; height: 100%; background-color: var(--accent-color); transition: width 0.3s; }
         #storage-text { font-size: 0.75rem; color: #aaa; }
 
-        .sidebar-notes-list { flex: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
-        .sidebar-note-item {
-            padding: 12px 15px; display: flex; align-items: center; gap: 15px;
-            cursor: pointer; border-bottom: 1px solid var(--border-color); overflow: hidden; white-space: nowrap;
-        }
-        .sidebar-note-item:hover { background-color: var(--toolbar-bg); }
-        .note-icon { width: 30px; text-align: center; font-size: 1.2rem; }
-        
-        .sidebar-tools {
-            padding: 10px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px;
-        }
-        .btn-side-tool {
-            display: flex; align-items: center; gap: 15px; background: transparent; border: 1px solid var(--border-color);
-            padding: 10px; color: var(--text-color); font-weight: bold; justify-content: flex-start; overflow: hidden; white-space: nowrap;
-        }
-        .btn-side-tool:hover { background: var(--toolbar-bg); }
-
-        #sidebar.collapsed .sidebar-title,
-        #sidebar.collapsed .storage-details,
-        #sidebar.collapsed .tool-label,
-        #sidebar.collapsed .sidebar-note-title {
-            opacity: 0; pointer-events: none; display: none;
-        }
+        #sidebar.collapsed .sidebar-title, #sidebar.collapsed .storage-details, #sidebar.collapsed .tool-label, #sidebar.collapsed .sidebar-note-title { opacity: 0; pointer-events: none; display: none; }
         #sidebar.collapsed .storage-section, #sidebar.collapsed .sidebar-note-item, #sidebar.collapsed .btn-side-tool { justify-content: center; padding-left: 0; padding-right: 0; }
 
         /* --- CONTENEDOR PRINCIPAL --- */
         #main-container { flex: 1; display: flex; flex-direction: column; position: relative; overflow-y: auto; }
 
-        header {
-            background-color: var(--surface-color); padding: 15px 30px; border-bottom: 1px solid var(--border-color);
-            display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10;
-        }
+        header { background-color: var(--surface-color); padding: 15px 30px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
         header h1 { margin: 0; font-size: 1.5rem; }
         .controls-row { display: flex; gap: 15px; align-items: center; }
 
-        /* --- PANTALLA DE INICIO (GRID) --- */
         main { padding: 40px; max-width: 1400px; margin: 0 auto; width: 100%; }
         .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
 
-        .note-card {
-            background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 12px;
-            padding: 20px; height: 250px; display: flex; flex-direction: column; cursor: pointer; position: relative; box-shadow: 0 4px 6px var(--shadow);
-        }
+        .note-card { background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; height: 250px; display: flex; flex-direction: column; cursor: pointer; position: relative; box-shadow: 0 4px 6px var(--shadow); }
         .note-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px var(--shadow); background-color: var(--card-hover); }
         .note-card-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .note-card-preview { font-size: 0.95rem; opacity: 0.7; flex: 1; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; }
+        .note-card-preview { font-size: 0.95rem; opacity: 0.7; flex: 1; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; line-height: 1.5; }
         .note-card-footer { margin-top: 15px; font-size: 0.8rem; opacity: 0.5; }
         
-        .btn-delete-card {
-            position: absolute; top: 15px; right: 15px; background: rgba(255, 77, 77, 0.2); color: #ff4d4d;
-            border: none; border-radius: 50%; width: 30px; height: 30px; opacity: 0; transition: opacity 0.2s;
-        }
+        .btn-delete-card { position: absolute; top: 15px; right: 15px; background: rgba(255, 77, 77, 0.2); color: #ff4d4d; border: none; border-radius: 50%; width: 30px; height: 30px; opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;}
         .note-card:hover .btn-delete-card { opacity: 1; }
 
-        /* --- MODAL (VENTANA SUPERPUESTA DEL EDITOR) --- */
+        /* --- MODALES (EDITOR Y CONFIGURACIÓN) --- */
         .modal-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center;
@@ -169,49 +138,31 @@
         .modal-overlay.active .modal-content { transform: translateY(0); }
         .modal-content.maximized { width: 100% !important; max-width: 100% !important; height: 100% !important; border-radius: 0 !important; border: none !important; }
 
-        .modal-header {
-            padding: 20px 30px; border-bottom: 1px solid var(--border-color); background-color: var(--surface-color);
-            display: flex; justify-content: space-between; align-items: center;
-        }
+        .modal-header { padding: 20px 30px; border-bottom: 1px solid var(--border-color); background-color: var(--surface-color); display: flex; justify-content: space-between; align-items: center; }
         .title-input { width: 50%; font-size: 1.8rem; font-weight: bold; background: transparent; border: none; color: var(--text-color); outline: none; }
         .header-controls { display: flex; align-items: center; gap: 15px; }
 
-        .btn-icon-head {
-            background: transparent; border: 1px solid var(--border-color); font-size: 1.2rem; color: var(--text-color);
-            width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
-        }
+        .btn-icon-head { background: transparent; border: 1px solid var(--border-color); font-size: 1.2rem; color: var(--text-color); width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
         .btn-icon-head:hover { background-color: var(--toolbar-bg); }
 
-        /* --- EDITOR DE BLOQUES --- */
+        /* --- CUERPO DEL MODAL (EDITOR CLÁSICO RESTAURADO) --- */
         .modal-body { display: flex; flex: 1; overflow: hidden; }
         .main-editor-area { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-        .editor-wrapper { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; align-items: center; }
         
-        .sections-container { width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 20px; padding-bottom: 30px; }
-        .section-block { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
-        .section-header { background-color: var(--toolbar-bg); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
-        .sec-title-input { font-size: 1.1rem; font-weight: bold; border: none; background: transparent; color: var(--text-color); flex: 1; }
-        .sec-limit-wrapper { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #aaa; margin-right: 15px; }
-        .sec-limit-input { width: 60px; text-align: center; }
-        .btn-del-sec { background: transparent; color: #ff4d4d; border: 1px solid #ff4d4d; border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; }
+        .editor-wrapper { flex: 1; overflow-y: auto; padding: 30px; display: flex; justify-content: center; cursor: text; }
+        .editor { width: 100%; max-width: 750px; min-height: 100%; outline: none; line-height: 1.6; font-size: 18px; padding-bottom: 50px; cursor: text; color: var(--text-color); }
+        .editor:empty:before { content: attr(data-placeholder); opacity: 0.4; }
+        .editor * { color: var(--text-color) !important; background-color: transparent !important; }
+        .editor > div, .editor > p { margin-bottom: 0.8em; }
+        .editor h1 { font-size: 1.5em; margin-top: 20px; margin-bottom: 10px; color: var(--accent-color) !important; }
+        .editor h2 { font-size: 1.25em; margin-top: 15px; margin-bottom: 10px; font-weight: bold; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;}
+        .editor h3 { font-size: 1.1em; margin-top: 10px; margin-bottom: 8px; font-weight: bold; opacity: 0.9; }
+        .editor u { text-decoration-color: var(--accent-color); text-decoration-thickness: 2px; }
+        .editor font[face="Consolas"] { font-family: 'Consolas', monospace; background-color: var(--surface-color) !important; padding: 2px 6px; border-radius: 4px; }
 
-        .section-editor { width: 100%; min-height: 80px; outline: none; line-height: 1.6; font-size: 18px; padding: 15px; cursor: text; color: var(--text-color); }
-        .section-editor:empty:before { content: attr(data-placeholder); opacity: 0.4; }
-        .section-editor > div, .section-editor > p { margin-bottom: 0.8em; }
-        .section-editor u { text-decoration-color: var(--accent-color); text-decoration-thickness: 2px; }
-        .section-editor font[face="Consolas"] { font-family: 'Consolas', monospace; background-color: var(--surface-color) !important; padding: 2px 6px; border-radius: 4px; }
+        .editor span.ghost-text, .editor span.ghost-text * { color: #8a8a8a !important; font-style: italic !important; opacity: 0.8; }
 
-        .section-footer { padding: 5px 15px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; font-size: 0.8rem; color: #888; background-color: var(--surface-color); }
-
-        /* SEMÁFORO Y CÓDIGO INVISIBLE */
-        .section-editor.goal-reached { color: var(--success-color); }
-        .section-editor.goal-reached * { color: var(--success-color); }
-        .excess-text, .excess-text * { color: #ff4757 !important; text-decoration: underline wavy #ff4757; }
-        span.ghost-text, span.ghost-text * { color: #8a8a8a !important; font-style: italic !important; opacity: 0.8; text-decoration: none !important; }
-
-        .btn-add-section { background: transparent; border: 2px dashed var(--border-color); color: var(--text-color); padding: 15px; width: 100%; max-width: 800px; border-radius: 8px; font-weight: bold; margin: 0 auto; }
-
-        /* --- PANELES SECUNDARIOS (TOOLBAR / VIDEOS) --- */
+        /* --- PANELES SECUNDARIOS --- */
         .video-panel { width: 320px; background-color: var(--toolbar-bg); border-left: 1px solid var(--border-color); display: none; flex-direction: column; }
         .video-panel.active { display: flex; }
         .video-panel-header { padding: 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; }
@@ -226,13 +177,27 @@
         .time-badge.selection-badge { border-style: dashed; border-color: var(--accent-color); }
 
         .mode-lectura .toolbar, .mode-lectura .modal-footer, .mode-lectura .video-panel { display: none !important; }
-        .mode-lectura .editor-wrapper, .mode-lectura .section-editor { cursor: default; }
-        .mode-lectura .section-header, .mode-lectura .btn-add-section { display: none; }
-        .mode-lectura .section-block { border: none; margin-bottom: 15px; background: transparent;}
-        .mode-lectura .section-footer { display: none; }
+        .mode-lectura .editor-wrapper, .mode-lectura .editor { cursor: default; }
+
+        /* --- PANTALLA DE DRAG & DROP --- */
+        #drag-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(255, 71, 87, 0.9);
+            z-index: 9999; justify-content: center; align-items: center; flex-direction: column; color: white;
+            backdrop-filter: blur(5px);
+        }
+        #drag-overlay.active { display: flex; }
+        #drag-overlay h2 { font-size: 3rem; margin: 0; }
+        #drag-overlay p { font-size: 1.5rem; opacity: 0.8; }
+        
     </style>
 </head>
 <body>
+
+    <!-- DRAG AND DROP OVERLAY -->
+    <div id="drag-overlay">
+        <h2>📥 Suelta tu archivo aquí</h2>
+        <p>Restauraremos tu copia de seguridad al instante.</p>
+    </div>
 
     <!-- BARRA LATERAL -->
     <aside id="sidebar" class="expanded">
@@ -241,15 +206,6 @@
             <span class="sidebar-title">Menú Principal</span>
         </div>
         
-        <div class="storage-section" title="Espacio ocupado por tus guiones comprimidos">
-            <div class="storage-icon">📦</div>
-            <div class="storage-details">
-                <div class="storage-meter"><div id="storage-bar"></div></div>
-                <span id="storage-text">Calculando...</span>
-            </div>
-        </div>
-
-        <!-- SKELETON EN LA BARRA LATERAL -->
         <ul class="sidebar-notes-list" id="sidebar-notes-list">
             <li class="skel-sidebar-item"><div class="skeleton skel-icon"></div><div class="skeleton skel-text" style="margin:0;"></div></li>
             <li class="skel-sidebar-item"><div class="skeleton skel-icon"></div><div class="skeleton skel-text" style="margin:0; width:60%"></div></li>
@@ -257,15 +213,17 @@
         </ul>
 
         <div class="sidebar-tools">
-            <!-- INPUT OCULTO RESTAURADO AQUÍ -->
-            <input type="file" id="import-file" style="display: none;" accept=".json">
-            
-            <button id="btn-import-side" class="btn-side-tool" title="Restaurar una copia de seguridad">
-                <span>📥</span> <span class="tool-label">Cargar Backup</span>
+            <button id="btn-settings" class="btn-side-tool" title="Configuración">
+                <span>⚙️</span> <span class="tool-label">Configuración</span>
             </button>
-            <button id="btn-export-side" class="btn-side-tool" title="Descargar todos tus guiones">
-                <span>📤</span> <span class="tool-label">Guardar Backup</span>
-            </button>
+        </div>
+
+        <div class="storage-section" title="IndexedDB Storage">
+            <div class="storage-icon">📦</div>
+            <div class="storage-details">
+                <div class="storage-meter"><div id="storage-bar"></div></div>
+                <span id="storage-text">Calculando...</span>
+            </div>
         </div>
     </aside>
 
@@ -285,10 +243,9 @@
         <main>
             <div class="header-actions">
                 <h2>Todos mis Guiones</h2>
-                <button id="btn-new-note" class="btn-primary">+ Nuevo Guion Libre</button>
+                <button id="btn-new-note" class="btn-primary">+ Nuevo Guion</button>
             </div>
             
-            <!-- SKELETON EN LA CUADRÍCULA -->
             <div class="notes-grid" id="notes-grid">
                 <div class="skel-card">
                     <div class="skeleton skel-title"></div>
@@ -306,7 +263,7 @@
             </div>
         </main>
 
-        <!-- MODAL (EDITOR) -->
+        <!-- MODAL EDITOR DE GUIONES -->
         <div class="modal-overlay" id="editor-modal">
             <div class="modal-content" id="modal-content">
                 
@@ -326,8 +283,7 @@
                 <div class="modal-body">
                     <div class="main-editor-area">
                         <div class="editor-wrapper" id="editor-wrapper">
-                            <div class="sections-container" id="sections-container"></div>
-                            <button class="btn-add-section" id="btn-add-section">+ Añadir Nueva Sección</button>
+                            <div id="editor" class="editor" contenteditable="true" data-placeholder="Comienza a escribir tu guion aquí... Usa '===' para añadir pausas de 5s. Lo escrito entre [ ] no se cuenta."></div>
                         </div>
 
                         <div class="toolbar" id="toolbar">
@@ -378,6 +334,28 @@
                 </div>
             </div>
         </div>
+
+        <!-- MODAL CONFIGURACIÓN -->
+        <div class="modal-overlay" id="settings-modal">
+            <div class="modal-content" style="max-width: 500px; height: auto;">
+                <div class="modal-header">
+                    <h2 style="margin:0; font-size: 1.5rem;">⚙️ Configuración</h2>
+                    <button class="btn-icon-head" id="btn-close-settings">✕</button>
+                </div>
+                <div class="modal-body" style="padding: 30px; flex-direction: column; gap: 20px;">
+                    <div>
+                        <h3 style="margin-top:0; margin-bottom:10px;">Copias de Seguridad (Backups)</h3>
+                        <p style="font-size: 0.9rem; opacity: 0.7; margin-bottom:20px;">Puedes arrastrar y soltar un archivo .json en cualquier parte de la pantalla, o utilizar los botones de abajo.</p>
+                        <div style="display: flex; gap: 15px;">
+                            <input type="file" id="import-file" style="display: none;" accept=".json">
+                            <button id="btn-import-settings" class="btn-secondary" style="flex:1;">📥 Cargar Backup</button>
+                            <button id="btn-export-settings" class="btn-primary" style="flex:1;">📤 Guardar Backup</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -419,7 +397,8 @@
 
         // --- REFERENCIAS DEL DOM ---
         const sidebar = document.getElementById('sidebar');
-        const sectionsContainer = document.getElementById('sections-container');
+        const editor = document.getElementById('editor');
+        const editorWrapper = document.getElementById('editor-wrapper');
         const noteTitle = document.getElementById('note-title');
         const notesGridUI = document.getElementById('notes-grid');
         const sidebarListUI = document.getElementById('sidebar-notes-list');
@@ -429,12 +408,12 @@
         const modal = document.getElementById('editor-modal');
         const modalContent = document.getElementById('modal-content');
         const modeSelect = document.getElementById('mode-select');
-        const editorWrapper = document.getElementById('editor-wrapper');
+        const settingsModal = document.getElementById('settings-modal');
+        const dragOverlay = document.getElementById('drag-overlay');
         const importFileInput = document.getElementById('import-file');
         
         let notes = [];
         let currentNoteId = null;
-        let lastActiveEditor = null; // Rastrea qué sección está enfocada
         let currentWPM = parseInt(localStorage.getItem('yt-pro-pace')) || 145;
         let autoSaveTimer;
 
@@ -445,11 +424,11 @@
             const localData = await getLocalVault('compressed_notes');
             if (localData) {
                 notes = JSON.parse(LZString.decompressFromUTF16(localData) || '[]');
-                verifyTemplate();
+                verifyAndMigrate();
                 renderAllUIs();
                 updateStorageMeter(localData);
             } else {
-                verifyTemplate();
+                renderAllUIs();
             }
 
             dbRef.on('value', async (snapshot) => {
@@ -458,6 +437,7 @@
                     const cloudJSON = LZString.decompressFromUTF16(cloudCompressed);
                     if (cloudJSON) {
                         notes = JSON.parse(cloudJSON);
+                        verifyAndMigrate();
                         await setLocalVault('compressed_notes', cloudCompressed);
                         renderAllUIs(); 
                         updateStorageMeter(cloudCompressed);
@@ -469,20 +449,17 @@
         }
         bootApp();
 
-        function verifyTemplate() {
-            if (!notes.some(n => n.title === 'Examen Profesional - Portafolio')) {
-                notes.push({ 
-                    id: Date.now().toString(), title: 'Examen Profesional - Portafolio', updatedAt: Date.now(), videos: [],
-                    sections: [
-                        { id: 'sec1', title: 'Introducción y Contexto', content: '', limit: 290 },
-                        { id: 'sec2', title: 'Autoevaluación', content: '', limit: 435 },
-                        { id: 'sec3', title: 'Elección de Evidencias (Proyectos)', content: '', limit: 580 },
-                        { id: 'sec4', title: 'Método de Reflexión (Gibbs)', content: '', limit: 580 },
-                        { id: 'sec5', title: 'Aprendizajes y Compromisos', content: '', limit: 290 }
-                    ]
-                });
-                triggerMasterSave();
-            }
+        // Traductor automático: Si el backup tenía "sections", las une en una sola hoja.
+        function verifyAndMigrate() {
+            let changed = false;
+            notes.forEach(note => {
+                if (note.sections && note.sections.length > 0) {
+                    note.content = note.sections.map(s => `<h2>${s.title}</h2><div>${s.content}</div>`).join('<br>');
+                    delete note.sections;
+                    changed = true;
+                }
+            });
+            if(changed) triggerMasterSave();
         }
 
         // --- 4. MOTOR DE GUARDADO ---
@@ -494,19 +471,11 @@
                 if (currentNoteId) {
                     const note = notes.find(n => n.id === currentNoteId);
                     if (note) {
+                        applySyntaxHighlighting();
                         note.title = noteTitle.value;
+                        note.content = editor.innerHTML;
                         note.updatedAt = Date.now();
-                        note.sections = [];
-                        document.querySelectorAll('.section-block').forEach(block => {
-                            note.sections.push({
-                                id: block.getAttribute('data-sec-id'),
-                                title: block.querySelector('.sec-title-input').value,
-                                content: block.querySelector('.section-editor').innerHTML,
-                                limit: parseInt(block.querySelector('.sec-limit-input').value) || 0
-                            });
-                            updateSectionFormatting(block.querySelector('.section-editor'));
-                        });
-                        updateGlobalStats();
+                        updateStats();
                     }
                 }
                 
@@ -530,16 +499,75 @@
         function updateStorageMeter(compressedData) {
             const bytes = compressedData.length * 2;
             const kb = (bytes / 1024).toFixed(2);
-            const MAX_KB = 51200; 
+            const MAX_KB = 51200; // 50MB Visual Cap
             const percentage = Math.min((bytes / 1024 / MAX_KB) * 100, 100);
-            document.getElementById('storage-text').textContent = `${kb} KB / 50 MB`;
-            document.getElementById('storage-bar').style.width = `${percentage}%`;
+            storageText.textContent = `${kb} KB / 50 MB visual`;
+            storageBar.style.width = `${percentage}%`;
+        }
+
+        // --- DRAG & DROP Y BACKUPS ---
+        document.body.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dragOverlay.classList.add('active');
+        });
+        document.body.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            if (e.target === dragOverlay) dragOverlay.classList.remove('active');
+        });
+        document.body.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragOverlay.classList.remove('active');
+            if (e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                if (file.name.endsWith('.json')) processBackupFile(file);
+                else alert('Por favor, arrastra un archivo .json válido.');
+            }
+        });
+
+        document.getElementById('btn-export-settings').addEventListener('click', () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({notes, pace: currentWPM}, null, 2));
+            const a = document.createElement('a'); a.href = dataStr; a.download = `YT_ScriptPro_Backup.json`; document.body.appendChild(a); a.click(); a.remove();
+        });
+        
+        document.getElementById('btn-import-settings').addEventListener('click', () => importFileInput.click());
+
+        importFileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) processBackupFile(e.target.files[0]);
+        });
+
+        function processBackupFile(file) {
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.notes && Array.isArray(data.notes)) {
+                        notes = data.notes;
+                        verifyAndMigrate();
+                        const compressedString = LZString.compressToUTF16(JSON.stringify(notes));
+                        await setLocalVault('compressed_notes', compressedString);
+                        dbRef.set(compressedString); 
+                    }
+                    if (data.pace) localStorage.setItem('yt-pro-pace', data.pace);
+                    if (data.fontsize) localStorage.setItem('yt-pro-fontsize', data.fontsize);
+                    
+                    alert('✅ Backup restaurado y sincronizado con éxito.');
+                    location.reload();
+                } catch (err) { alert('❌ Error: El archivo no es válido.'); }
+                importFileInput.value = ''; 
+            };
+            reader.readAsText(file);
         }
 
         // --- INTERFAZ UI ---
-        document.getElementById('btn-hamburger').addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-        });
+        document.getElementById('btn-hamburger').addEventListener('click', () => sidebar.classList.toggle('collapsed'));
+        
+        // Clic fuera del modal cierra la nota
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeNoteModal(); });
+        
+        // Ventana de configuración
+        document.getElementById('btn-settings').addEventListener('click', () => settingsModal.classList.add('active'));
+        document.getElementById('btn-close-settings').addEventListener('click', () => settingsModal.classList.remove('active'));
+        settingsModal.addEventListener('click', (e) => { if(e.target === settingsModal) settingsModal.classList.remove('active'); });
 
         function renderAllUIs() {
             renderNotesGrid();
@@ -562,12 +590,10 @@
             notesGridUI.innerHTML = '';
             const sortedNotes = [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
             sortedNotes.forEach(note => {
-                let previewText = '';
-                if(note.sections && note.sections.length > 0) {
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = note.sections[0].content;
-                    previewText = tempDiv.innerText || 'Sin contenido...';
-                }
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = note.content;
+                const previewText = tempDiv.innerText || 'Sin contenido...';
+                
                 const dateObj = new Date(note.updatedAt);
                 const dateString = dateObj.toLocaleDateString('es-MX', { timeZone: 'America/Monterrey' }) + ' ' + dateObj.toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour:'2-digit', minute:'2-digit' });
 
@@ -598,100 +624,39 @@
             if (note) {
                 currentNoteId = id;
                 noteTitle.value = note.title;
-                if (!note.sections) note.sections = [{ id: 's1', title: 'Guion Principal', content: note.content || '', limit: 0 }];
+                editor.innerHTML = note.content || '';
                 if (!note.videos) note.videos = [];
                 
                 document.getElementById('mode-select').value = 'editor';
                 modalContent.classList.remove('mode-lectura');
                 
-                renderSectionsUI(note.sections);
                 renderVideoList();
-                
                 modal.classList.add('active');
                 
                 const savedSize = localStorage.getItem('yt-pro-fontsize') || '18px';
                 document.getElementById('font-size').value = savedSize;
-                document.querySelectorAll('.section-editor').forEach(ed => {
-                    ed.style.fontSize = savedSize;
-                    updateSectionFormatting(ed);
-                });
-                updateGlobalStats();
+                editor.style.fontSize = savedSize;
+                
+                applySyntaxHighlighting();
+                updateStats();
+                document.getElementById('selected-time').style.display = 'none';
+                editor.focus();
             }
         }
 
-        document.getElementById('btn-close-modal').addEventListener('click', () => {
+        document.getElementById('btn-close-modal').addEventListener('click', closeNoteModal);
+        function closeNoteModal() {
             triggerMasterSave(true);
             modal.classList.remove('active');
+            modalContent.classList.remove('maximized');
             renderAllUIs();
-        });
-
-        // --- SISTEMA DE SECCIONES CORREGIDO ---
-        function renderSectionsUI(sections) {
-            sectionsContainer.innerHTML = '';
-            sections.forEach(sec => {
-                const block = document.createElement('div');
-                block.className = 'section-block';
-                block.setAttribute('data-sec-id', sec.id);
-                block.innerHTML = `
-                    <div class="section-header">
-                        <input type="text" class="sec-title-input" value="${sec.title}">
-                        <div class="sec-limit-wrapper"><label>Límite:</label><input type="number" class="sec-limit-input" value="${sec.limit || 0}" min="0"></div>
-                        <button class="btn-del-sec" onclick="deleteSection('${sec.id}')">✕</button>
-                    </div>
-                    <div class="section-editor" contenteditable="true" data-placeholder="Contenido...">${sec.content}</div>
-                    <div class="section-footer"><span class="sec-word-count">0 / ${sec.limit || '∞'} palabras</span></div>
-                `;
-                sectionsContainer.appendChild(block);
-                
-                const ed = block.querySelector('.section-editor');
-                
-                ed.addEventListener('focus', () => lastActiveEditor = ed);
-                
-                ed.addEventListener('input', () => triggerMasterSave());
-                block.querySelector('.sec-title-input').addEventListener('input', () => triggerMasterSave());
-                block.querySelector('.sec-limit-input').addEventListener('input', () => triggerMasterSave(true));
-                ed.addEventListener('paste', handlePaste);
-
-                ed.addEventListener('keydown', (e) => {
-                    if (e.ctrlKey || e.metaKey) {
-                        const key = e.key.toLowerCase();
-                        if (key === 'b') { e.preventDefault(); format('bold'); }
-                        if (key === 'i') { e.preventDefault(); format('italic'); }
-                        if (key === 'u') { e.preventDefault(); format('underline'); }
-                    }
-                    if (e.key === 'Enter') {
-                        const formatNode = document.queryCommandValue('formatBlock');
-                        if (formatNode === 'h1' || formatNode === 'h2' || formatNode === 'h3') {
-                            setTimeout(() => format('formatBlock', 'div'), 10);
-                        }
-                    }
-                });
-            });
         }
 
-        document.getElementById('btn-add-section').addEventListener('click', () => {
-            const note = notes.find(n => n.id === currentNoteId);
-            if(note) {
-                note.sections.push({ id: 's' + Date.now(), title: 'Nueva Sección', content: '', limit: 0 });
-                renderSectionsUI(note.sections);
-                triggerMasterSave(true);
-            }
-        });
-
-        function deleteSection(secId) {
-            if(confirm('¿Borrar sección?')) {
-                const note = notes.find(n => n.id === currentNoteId);
-                note.sections = note.sections.filter(s => s.id !== secId);
-                renderSectionsUI(note.sections);
-                triggerMasterSave(true);
-            }
-        }
-
-        // --- DETECCIÓN INTELIGENTE DE CURSOR (RESTURADO Y ADAPTADO) ---
+        // --- EDITOR Y CÁLCULOS ---
         editorWrapper.addEventListener('mousedown', function(e) {
             if (modeSelect.value === 'editor' && e.target === editorWrapper) {
                 e.preventDefault();
-
+                editor.focus();
                 let range = null;
                 if (document.caretRangeFromPoint) { 
                     range = document.caretRangeFromPoint(e.clientX, e.clientY);
@@ -703,142 +668,63 @@
                         range.collapse(true);
                     }
                 }
-
                 const sel = window.getSelection();
                 if (range) {
-                    let node = range.startContainer;
-                    let isInsideEditor = false;
-                    
-                    while (node && node !== document.body) {
-                        if (node.classList && node.classList.contains('section-editor')) {
-                            isInsideEditor = true;
-                            lastActiveEditor = node;
-                            node.focus();
-                            break;
-                        }
-                        node = node.parentNode;
-                    }
-
-                    if (isInsideEditor) {
-                        sel.removeAllRanges();
-                        sel.addRange(range);
-                    } else {
-                        focusLastAvailableEditor(sel);
-                    }
-                } else {
-                    focusLastAvailableEditor(sel);
+                    sel.removeAllRanges(); sel.addRange(range);
+                } else if (editor.innerText.trim() !== '') {
+                    const fallbackRange = document.createRange();
+                    fallbackRange.selectNodeContents(editor);
+                    fallbackRange.collapse(false);
+                    sel.removeAllRanges(); sel.addRange(fallbackRange);
                 }
             }
         });
 
-        function focusLastAvailableEditor(sel) {
-            const editors = document.querySelectorAll('.section-editor');
-            if (editors.length > 0) {
-                const lastEd = editors[editors.length - 1];
-                lastActiveEditor = lastEd;
-                lastEd.focus();
-                
-                const fallbackRange = document.createRange();
-                fallbackRange.selectNodeContents(lastEd);
-                fallbackRange.collapse(false);
-                sel.removeAllRanges();
-                sel.addRange(fallbackRange);
-            }
-        }
-
-        // Semáforo Lógico
-        function updateSectionFormatting(editorEl) {
-            const block = editorEl.closest('.section-block');
-            const limit = parseInt(block.querySelector('.sec-limit-input').value) || 0;
-            
-            saveCaret(editorEl);
-            editorEl.querySelectorAll('.excess-text, .ghost-text').forEach(span => {
-                const frag = document.createDocumentFragment();
-                while(span.firstChild) frag.appendChild(span.firstChild);
-                span.parentNode.replaceChild(frag, span);
-            });
-            editorEl.normalize();
-
-            let html = editorEl.innerHTML;
-            const newHtml = html.replace(/(<[^>]+>)|(\[[\s\S]*?\]|===)/g, (match, tag, special) => tag ? tag : `<span class="ghost-text">${special}</span>`);
-            if (html !== newHtml) editorEl.innerHTML = newHtml;
-
-            let wordCount = 0; let limitReached = false;
-            const walker = document.createTreeWalker(editorEl, NodeFilter.SHOW_TEXT, null, false);
-            const textNodes = []; let node;
-            while(node = walker.nextNode()) textNodes.push(node);
-
-            for (let i = 0; i < textNodes.length; i++) {
-                const textNode = textNodes[i];
-                if (textNode.parentNode && textNode.parentNode.classList.contains('ghost-text')) continue;
-
-                if (limit > 0 && limitReached) { wrapNode(textNode, 'excess-text'); continue; }
-
-                const text = textNode.nodeValue;
-                const words = text.match(/\S+/g) || [];
-                
-                if (limit > 0 && (wordCount + words.length > limit)) {
-                    limitReached = true;
-                    const wordsNeeded = limit - wordCount;
-                    let match; let wordRegex = /\S+/g; let currentMatch = 0; let splitIndex = text.length;
-                    while ((match = wordRegex.exec(text)) !== null) {
-                        currentMatch++;
-                        if (currentMatch === wordsNeeded + 1) { splitIndex = match.index; break; }
-                    }
-                    const validText = text.substring(0, splitIndex);
-                    const excessText = text.substring(splitIndex);
-                    textNode.nodeValue = validText;
-                    if (excessText.length > 0) {
-                        const excessNode = document.createTextNode(excessText);
-                        const span = document.createElement('span'); span.className = 'excess-text'; span.appendChild(excessNode);
-                        textNode.parentNode.insertBefore(span, textNode.nextSibling);
-                    }
-                    wordCount += wordsNeeded;
-                } else { wordCount += words.length; }
-            }
-
-            block.querySelector('.sec-word-count').textContent = `${wordCount} / ${limit > 0 ? limit : '∞'} palabras`;
-            if (limit > 0 && wordCount >= (limit * 0.9)) editorEl.classList.add('goal-reached');
-            else editorEl.classList.remove('goal-reached');
-
-            restoreCaret(editorEl);
-        }
-
-        function wrapNode(textNode, className) {
-            const span = document.createElement('span'); span.className = className;
-            textNode.parentNode.insertBefore(span, textNode); span.appendChild(textNode);
-        }
-
-        function saveCaret(editor) {
+        function applySyntaxHighlighting() {
+            if (modeSelect.value !== 'editor') return;
             const sel = window.getSelection();
-            if (sel.rangeCount > 0 && editor.contains(sel.focusNode)) {
+            const hasSelection = sel.rangeCount > 0 && editor.contains(sel.focusNode);
+            if (hasSelection) {
                 const range = sel.getRangeAt(0);
                 const s = document.createElement('span'); s.id = 'caret-start';
                 const e = document.createElement('span'); e.id = 'caret-end';
                 const rEnd = range.cloneRange(); rEnd.collapse(false); rEnd.insertNode(e);
                 const rStart = range.cloneRange(); rStart.collapse(true); rStart.insertNode(s);
             }
-        }
-        function restoreCaret(editor) {
-            const s = editor.querySelector('#caret-start'), e = editor.querySelector('#caret-end');
-            if (s && e) {
-                const sel = window.getSelection(); const range = document.createRange();
-                range.setStartAfter(s); range.setEndBefore(e); sel.removeAllRanges(); sel.addRange(range);
-                s.remove(); e.remove();
-            } else { if(s) s.remove(); if(e) e.remove(); }
-        }
 
-        function updateGlobalStats() {
-            let tW = 0, eS = 0;
-            document.querySelectorAll('.section-editor').forEach(ed => {
-                const textToCount = ed.innerText.trim().replace(/\[[\s\S]*?\]/g, '');
-                eS += (textToCount.match(/===/g) ? textToCount.match(/===/g).length : 0) * 5;
-                const wordsMatch = textToCount.replace(/===/g, '').match(/\S+/g);
-                tW += wordsMatch ? wordsMatch.length : 0;
+            editor.querySelectorAll('.ghost-text').forEach(span => {
+                const frag = document.createDocumentFragment();
+                while(span.firstChild) frag.appendChild(span.firstChild);
+                span.parentNode.replaceChild(frag, span);
             });
+            editor.normalize();
 
-            document.getElementById('word-count').textContent = `${tW} palabras en total`;
-            const scriptSeconds = Math.floor((tW / currentWPM) * 60) + eS;
+            let html = editor.innerHTML;
+            const newHtml = html.replace(/(<[^>]+>)|(\[[\s\S]*?\]|===)/g, (match, tag, special) => tag ? tag : `<span class="ghost-text">${special}</span>`);
+            if (html !== newHtml) editor.innerHTML = newHtml;
+
+            if (hasSelection) {
+                const s = document.getElementById('caret-start'), e = document.getElementById('caret-end');
+                if (s && e) {
+                    const range = document.createRange();
+                    range.setStartAfter(s); range.setEndBefore(e);
+                    sel.removeAllRanges(); sel.addRange(range);
+                    s.remove(); e.remove();
+                } else { if(s) s.remove(); if(e) e.remove(); }
+            }
+        }
+
+        function updateStats() {
+            const rawText = editor.innerText.trim();
+            const textToCount = rawText.replace(/\[[\s\S]*?\]/g, '');
+            const pauseMatch = textToCount.match(/===/g);
+            const extraSeconds = (pauseMatch ? pauseMatch.length : 0) * 5;
+            const cleanText = textToCount.replace(/===/g, '');
+            const wordsMatch = cleanText.match(/\S+/g);
+            const words = wordsMatch ? wordsMatch.length : 0;
+
+            document.getElementById('word-count').textContent = `${words} palabras narradas`;
+            const scriptSeconds = Math.floor((words / currentWPM) * 60) + extraSeconds;
             document.getElementById('script-time').textContent = `Lectura: ${String(Math.floor(scriptSeconds/60)).padStart(2,'0')}:${String(scriptSeconds%60).padStart(2,'0')}`;
 
             let clipsSecs = 0;
@@ -850,14 +736,34 @@
             document.getElementById('total-time').textContent = `Total: ${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
         }
 
-        // --- VIDEOS Y RESTO DE BOTONES ---
+        document.addEventListener('selectionchange', () => {
+            if (!modal.classList.contains('active')) return;
+            const selection = window.getSelection();
+            if (!selection.rangeCount || !editor.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+                document.getElementById('selected-time').style.display = 'none'; return;
+            }
+            const rawText = selection.toString().trim();
+            if (rawText.length === 0) { document.getElementById('selected-time').style.display = 'none'; return; }
+
+            const textToCount = rawText.replace(/\[[\s\S]*?\]/g, '');
+            const pauseMatch = textToCount.match(/===/g);
+            const extraSeconds = (pauseMatch ? pauseMatch.length : 0) * 5;
+            const wordsMatch = textToCount.replace(/===/g, '').match(/\S+/g);
+            const words = wordsMatch ? wordsMatch.length : 0;
+
+            const selectedSeconds = Math.floor((words / currentWPM) * 60) + extraSeconds;
+            document.getElementById('selected-time').textContent = `Selección: ${String(Math.floor(selectedSeconds/60)).padStart(2,'0')}:${String(selectedSeconds%60).padStart(2,'0')}`;
+            document.getElementById('selected-time').style.display = 'block';
+        });
+
+        // --- VIDEOS Y FORMATOS ---
         document.getElementById('btn-add-video').addEventListener('click', () => {
             const n = document.getElementById('vid-name').value.trim() || 'Clip';
             const m = parseInt(document.getElementById('vid-min').value) || 0;
             const s = parseInt(document.getElementById('vid-sec').value) || 0;
             if (m===0 && s===0) return; 
             const note = notes.find(n => n.id === currentNoteId);
-            if(note) { note.videos.push({ id: Date.now().toString(), name: n, durationSecs: (m*60)+s }); triggerMasterSave(true); renderVideoList(); updateGlobalStats(); }
+            if(note) { note.videos.push({ id: Date.now().toString(), name: n, durationSecs: (m*60)+s }); triggerMasterSave(true); renderVideoList(); updateStats(); }
         });
 
         function renderVideoList() {
@@ -870,6 +776,7 @@
                 ul.appendChild(li);
             });
         }
+        window.deleteVideoObj = (id) => { const n = notes.find(n=>n.id===currentNoteId); if(n){ n.videos=n.videos.filter(v=>v.id!==id); triggerMasterSave(true); renderVideoList(); updateStats(); }};
 
         document.getElementById('btn-maximize').addEventListener('click', () => {
             modalContent.classList.toggle('maximized');
@@ -878,66 +785,31 @@
         document.getElementById('btn-toggle-video').addEventListener('click', () => document.getElementById('video-panel').classList.toggle('active'));
         document.getElementById('btn-new-note').addEventListener('click', () => createNewNote(true));
         
-        function format(command, val=null) { 
-            document.execCommand(command, false, val); 
-            if (lastActiveEditor) lastActiveEditor.focus();
-            triggerMasterSave(); 
-        }
-        
-        function handlePaste(e) { e.preventDefault(); document.execCommand('insertText', false, (e.originalEvent||e).clipboardData.getData('text/plain')); }
-        
-        // --- EVENTO DE IMPORTACIÓN CORREGIDO ---
-        document.getElementById('btn-export-side').addEventListener('click', () => {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({notes, pace: currentWPM}, null, 2));
-            const a = document.createElement('a'); a.href = dataStr; a.download = `YT_ScriptPro_Full_Backup.json`; document.body.appendChild(a); a.click(); a.remove();
-        });
-        
-        document.getElementById('btn-import-side').addEventListener('click', () => importFileInput.click());
-
-        importFileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (data.notes && Array.isArray(data.notes)) {
-                        notes = data.notes;
-                        
-                        // 1. Convertir a string
-                        const jsonString = JSON.stringify(notes);
-                        // 2. Comprimir con LZ-String
-                        const compressedString = LZString.compressToUTF16(jsonString);
-                        
-                        // 3. Guardar en IndexedDB
-                        await setLocalVault('compressed_notes', compressedString);
-                        // 4. Sincronizar a la nube de inmediato
-                        dbRef.set(compressedString); 
-                    }
-                    if (data.pace) localStorage.setItem('yt-pro-pace', data.pace);
-                    if (data.fontsize) localStorage.setItem('yt-pro-fontsize', data.fontsize);
-                    
-                    alert('✅ Backup restaurado y sincronizado con éxito. La página se actualizará.');
-                    location.reload();
-                } catch (err) {
-                    alert('❌ Error: El archivo no es un backup válido o está dañado.');
+        editor.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                const key = e.key.toLowerCase();
+                if (key === 'b') { e.preventDefault(); format('bold'); }
+                if (key === 'i') { e.preventDefault(); format('italic'); }
+                if (key === 'u') { e.preventDefault(); format('underline'); }
+            }
+            if (e.key === 'Enter') {
+                const formatNode = document.queryCommandValue('formatBlock');
+                if (formatNode === 'h1' || formatNode === 'h2' || formatNode === 'h3') {
+                    setTimeout(() => format('formatBlock', 'div'), 10);
                 }
-                importFileInput.value = ''; 
-            };
-            reader.readAsText(file);
+            }
         });
 
-        document.getElementById('font-size').addEventListener('change', (e) => {
-            const newSize = e.target.value;
-            document.querySelectorAll('.section-editor').forEach(ed => ed.style.fontSize = newSize);
-            localStorage.setItem('yt-pro-fontsize', newSize);
-        });
+        function format(command, val=null) { document.execCommand(command, false, val); editor.focus(); triggerMasterSave(); }
+        editor.addEventListener('paste', e => { e.preventDefault(); document.execCommand('insertText', false, (e.originalEvent||e).clipboardData.getData('text/plain')); });
+        editor.addEventListener('input', () => triggerMasterSave());
+        noteTitle.addEventListener('input', () => triggerMasterSave());
         
+        document.getElementById('font-size').addEventListener('change', (e) => {
+            const newSize = e.target.value; editor.style.fontSize = newSize; localStorage.setItem('yt-pro-fontsize', newSize);
+        });
         document.getElementById('pace-select').addEventListener('change', (e) => {
-            currentWPM = parseInt(e.target.value);
-            localStorage.setItem('yt-pro-pace', currentWPM);
-            updateGlobalStats();
+            currentWPM = parseInt(e.target.value); localStorage.setItem('yt-pro-pace', currentWPM); updateStats();
         });
     </script>
 </body>
