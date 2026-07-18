@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YT Script Writer Pro v11.2 - Edición Titulación</title>
+    <title>YT Script Writer Pro v11.3 - Cloud Sync</title>
+    
+    <!-- LIBRERÍAS DE FIREBASE (Versión Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
     <style>
         /* --- TEMA ÚNICO: OSCURO PRO --- */
         :root {
@@ -202,7 +207,6 @@
             <h2>Mis Guiones</h2>
             <div class="action-buttons">
                 <input type="file" id="import-file" style="display: none;" accept=".json">
-                
                 <button id="btn-import" class="btn-secondary" title="Restaurar una copia de seguridad">Cargar Backup</button>
                 <button id="btn-export" class="btn-secondary" title="Descargar todos tus guiones y ajustes">Guardar Backup</button>
                 <button id="btn-new-note" class="btn-primary">+ Nuevo Guion</button>
@@ -282,15 +286,15 @@
             </div>
 
             <div class="modal-footer" id="modal-footer">
-                <div style="display: flex; gap: 20px; font-size: 0.9rem;">
+                <div style="display: flex; gap: 20px; font-size: 0.9rem; align-items: center;">
                     <span id="word-count">0 palabras</span>
                     <span id="save-status" style="opacity: 0.5;">Guardado</span>
+                    <!-- NUEVO INDICADOR DE SINCRONIZACIÓN -->
+                    <span id="sync-status" style="color: var(--accent-color); font-weight: bold;"></span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <div class="time-badge" id="script-time" title="Tiempo de lectura del texto total">Lectura: 00:00</div>
-                    
                     <div class="time-badge selection-badge" id="selected-time" title="Tiempo del texto subrayado" style="display: none;">Selección: 00:00</div>
-                    
                     <div class="time-badge" id="clips-time" title="Suma de videos en el panel">Clips: 00:00</div>
                     <div class="time-badge accent" id="total-time" title="Duración final estimada">Total: 00:00</div>
                 </div>
@@ -300,16 +304,32 @@
     </div>
 
     <script>
+        // --- INICIALIZACIÓN DE FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBnX__R6A6lQw_KuzZxqHRkzZyj10S_4wU",
+            authDomain: "aula-virtual-79e4d.firebaseapp.com",
+            databaseURL: "https://aula-virtual-79e4d-default-rtdb.firebaseio.com",
+            projectId: "aula-virtual-79e4d",
+            storageBucket: "aula-virtual-79e4d.firebasestorage.app",
+            messagingSenderId: "384731632952",
+            appId: "1:384731632952:web:9b4facff98bc7f6ebf5dcd",
+            measurementId: "G-SR9D2CJX40"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const dbRef = database.ref('yt_script_writer_notes');
+
+        // Referencias del DOM
         const editor = document.getElementById('editor');
         const editorWrapper = document.getElementById('editor-wrapper');
         const noteTitle = document.getElementById('note-title');
         const notesGridUI = document.getElementById('notes-grid');
         const saveStatus = document.getElementById('save-status');
+        const syncStatus = document.getElementById('sync-status');
         const modal = document.getElementById('editor-modal');
         const modalContent = document.getElementById('modal-content');
         const modeSelect = document.getElementById('mode-select');
-        
-        // Elementos del panel de video
         const videoPanel = document.getElementById('video-panel');
         const btnToggleVideo = document.getElementById('btn-toggle-video');
         const videoListUI = document.getElementById('video-list');
@@ -317,13 +337,9 @@
         const vidMinInput = document.getElementById('vid-min');
         const vidSecInput = document.getElementById('vid-sec');
         const btnAddVideo = document.getElementById('btn-add-video');
-
-        // Elementos de Backup
         const btnExport = document.getElementById('btn-export');
         const btnImport = document.getElementById('btn-import');
         const importFile = document.getElementById('import-file');
-
-        // Elementos de pantalla
         const btnMaximize = document.getElementById('btn-maximize');
         const selectedTimeDisplay = document.getElementById('selected-time');
 
@@ -338,9 +354,24 @@
             document.getElementById('pace-select').value = currentWPM;
             if (notes.length === 0) createNewNote(false);
             renderNotesGrid();
+
+            // Sincronización en tiempo real desde Firebase
+            dbRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    notes = data;
+                    localStorage.setItem('yt-pro-notes', JSON.stringify(notes));
+                    renderNotesGrid();
+                    
+                    if (syncStatus) {
+                        syncStatus.textContent = "☁️ Sincronizado";
+                        setTimeout(() => syncStatus.textContent = "", 2000);
+                    }
+                }
+            });
         }
 
-        // --- SISTEMA DE BACKUP ---
+        // --- SISTEMA DE BACKUP LOCAL ---
         btnExport.addEventListener('click', () => {
             const backupData = {
                 notes: notes,
@@ -374,12 +405,13 @@
                 try {
                     const data = JSON.parse(e.target.result);
                     if (data.notes && Array.isArray(data.notes)) {
-                        localStorage.setItem('yt-pro-notes', JSON.stringify(data.notes));
+                        notes = data.notes;
+                        saveToLocal(); // Esto empujará el backup restaurado a Firebase automáticamente
                     }
                     if (data.pace) localStorage.setItem('yt-pro-pace', data.pace);
                     if (data.fontsize) localStorage.setItem('yt-pro-fontsize', data.fontsize);
                     
-                    alert('✅ Backup restaurado con éxito. La página se actualizará para aplicar los cambios.');
+                    alert('✅ Backup restaurado y sincronizado con éxito. La página se actualizará.');
                     location.reload();
                 } catch (err) {
                     alert('❌ Error: El archivo no es un backup válido o está dañado.');
@@ -412,8 +444,10 @@
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = note.content;
                 const plainTextPreview = tempDiv.innerText || 'Sin contenido...';
+                
+                // Formato de hora forzado a Monterrey para mantener precisión
                 const dateObj = new Date(note.updatedAt);
-                const dateString = dateObj.toLocaleDateString('en-US') + ' ' + dateObj.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+                const dateString = dateObj.toLocaleDateString('es-MX', { timeZone: 'America/Monterrey' }) + ' ' + dateObj.toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute:'2-digit' });
 
                 const card = document.createElement('div');
                 card.className = 'note-card';
@@ -464,7 +498,6 @@
                 updateStats();
                 
                 selectedTimeDisplay.style.display = 'none';
-                
                 editor.focus();
             }
         }
@@ -474,7 +507,6 @@
             modal.classList.remove('active');
             document.body.style.overflow = '';
             
-            // Restablecer el estado de pantalla completa
             modalContent.classList.remove('maximized');
             btnMaximize.textContent = '🗖';
             btnMaximize.title = 'Pantalla completa';
@@ -631,7 +663,6 @@
         // --- CÁLCULOS Y ESTADÍSTICAS ---
         function updateStats() {
             const rawText = editor.innerText.trim();
-            
             const textToCount = rawText.replace(/\[[\s\S]*?\]/g, '');
 
             const pauseMatch = textToCount.match(/===/g);
@@ -685,10 +716,8 @@
             }
 
             const textToCount = rawText.replace(/\[[\s\S]*?\]/g, '');
-
             const pauseMatch = textToCount.match(/===/g);
             const extraSeconds = (pauseMatch ? pauseMatch.length : 0) * 5;
-
             const cleanText = textToCount.replace(/===/g, '');
             const wordsMatch = cleanText.match(/\S+/g);
             const words = wordsMatch ? wordsMatch.length : 0;
@@ -718,7 +747,6 @@
             document.execCommand('insertText', false, text);
         });
 
-        // Evento modificado para ubicar el renglón correctamente
         editorWrapper.addEventListener('mousedown', function(e) {
             if (modeSelect.value === 'editor' && e.target === editorWrapper) {
                 e.preventDefault();
@@ -777,7 +805,7 @@
                     notes[noteIndex].title = noteTitle.value;
                     notes[noteIndex].content = editor.innerHTML;
                     notes[noteIndex].updatedAt = Date.now();
-                    saveToLocal();
+                    saveToLocal(); // Esto empuja los cambios a Firebase
                 }
                 saveStatus.textContent = "Guardado";
                 updateStats();
@@ -786,7 +814,25 @@
             else autoSaveTimer = setTimeout(saveFunc, 800);
         }
 
-        function saveToLocal() { localStorage.setItem('yt-pro-notes', JSON.stringify(notes)); }
+        // --- SISTEMA DE GUARDADO CONECTADO A FIREBASE ---
+        function saveToLocal() { 
+            // 1. Guardar localmente
+            localStorage.setItem('yt-pro-notes', JSON.stringify(notes)); 
+            
+            // 2. Empujar a la nube
+            if(syncStatus) syncStatus.textContent = "☁️ Subiendo...";
+            dbRef.set(notes)
+                .then(() => {
+                    if(syncStatus) {
+                        syncStatus.textContent = "☁️ Sincronizado";
+                        setTimeout(() => syncStatus.textContent = "", 2000);
+                    }
+                })
+                .catch((error) => {
+                    // Si falla por falta de internet, Firebase lo encola automáticamente
+                    if(syncStatus) syncStatus.textContent = "🔌 Modo Offline";
+                });
+        }
 
         function format(command, value = null) {
             document.execCommand(command, false, value);
