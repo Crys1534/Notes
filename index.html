@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YT Script Writer Pro v11.3 - Cloud Sync</title>
+    <title>YT Script Writer Pro v13 - God Mode (Compresión & Sync)</title>
     
-    <!-- LIBRERÍAS DE FIREBASE (Versión Compat) -->
+    <!-- FIREBASE COMPAT (Sincronización en la Nube) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
+    <!-- LZ-STRING (La Compresión de los Dioses) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 
     <style>
         /* --- TEMA ÚNICO: OSCURO PRO --- */
@@ -21,13 +24,18 @@
             --shadow: rgba(0,0,0,0.5); 
             --toolbar-bg: #2d2d2d; 
             --card-hover: #2a2a2a;
+            --success-color: #32ff7e; 
+            
+            /* Variables del Sidebar */
+            --sidebar-width-expanded: 260px;
+            --sidebar-width-collapsed: 65px;
         }
 
-        * { box-sizing: border-box; transition: background-color 0.2s, color 0.2s, border-color 0.2s; }
+        * { box-sizing: border-box; transition: background-color 0.2s, border-color 0.2s; }
 
         body {
             margin: 0; height: 100vh; background-color: var(--bg-color); color: var(--text-color);
-            font-family: var(--font-main); overflow-y: auto; overflow-x: hidden;
+            font-family: var(--font-main); overflow: hidden; display: flex;
         }
 
         /* --- BOTONES Y CONTROLES --- */
@@ -38,224 +46,259 @@
         button:hover { filter: brightness(1.2); }
         .btn-primary { background-color: var(--accent-color); color: #fff; border: none; font-weight: bold; padding: 10px 20px; font-size: 1rem; }
         .btn-small { padding: 4px 8px; font-size: 0.85rem; }
-        .btn-secondary { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); font-weight: bold; padding: 10px 20px; font-size: 1rem; }
-        .btn-secondary:hover { background: var(--toolbar-bg); }
 
-        /* --- HEADER --- */
+        /* --- BARRA LATERAL (SIDEBAR) --- */
+        #sidebar {
+            width: var(--sidebar-width-expanded);
+            background-color: var(--surface-color);
+            border-right: 1px solid var(--border-color);
+            display: flex; flex-direction: column;
+            transition: width 0.3s ease;
+            z-index: 50;
+        }
+        #sidebar.collapsed { width: var(--sidebar-width-collapsed); }
+        
+        .sidebar-header {
+            padding: 15px; border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; gap: 15px; white-space: nowrap; overflow: hidden;
+        }
+        .btn-hamburger { background: transparent; border: none; font-size: 1.5rem; color: var(--text-color); padding: 0; display: flex; justify-content: center; width: 30px; }
+        .sidebar-title { font-weight: bold; font-size: 1.2rem; }
+        
+        .storage-section {
+            padding: 15px; border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; gap: 15px; overflow: hidden; white-space: nowrap;
+        }
+        .storage-icon { font-size: 1.5rem; width: 30px; text-align: center; }
+        .storage-details { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+        .storage-meter { width: 100%; height: 6px; background-color: var(--bg-color); border-radius: 3px; overflow: hidden; }
+        #storage-bar { width: 0%; height: 100%; background-color: var(--accent-color); transition: width 0.3s; }
+        #storage-text { font-size: 0.75rem; color: #aaa; }
+
+        .sidebar-notes-list { flex: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
+        .sidebar-note-item {
+            padding: 12px 15px; display: flex; align-items: center; gap: 15px;
+            cursor: pointer; border-bottom: 1px solid var(--border-color); overflow: hidden; white-space: nowrap;
+        }
+        .sidebar-note-item:hover { background-color: var(--toolbar-bg); }
+        .note-icon { width: 30px; text-align: center; font-size: 1.2rem; }
+        
+        .sidebar-tools {
+            padding: 10px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px;
+        }
+        .btn-side-tool {
+            display: flex; align-items: center; gap: 15px; background: transparent; border: 1px solid var(--border-color);
+            padding: 10px; color: var(--text-color); font-weight: bold; justify-content: flex-start; overflow: hidden; white-space: nowrap;
+        }
+        .btn-side-tool:hover { background: var(--toolbar-bg); }
+
+        /* Ocultar textos en modo colapsado */
+        #sidebar.collapsed .sidebar-title,
+        #sidebar.collapsed .storage-details,
+        #sidebar.collapsed .tool-label,
+        #sidebar.collapsed .sidebar-note-title {
+            opacity: 0; pointer-events: none; display: none;
+        }
+        #sidebar.collapsed .storage-section, #sidebar.collapsed .sidebar-note-item, #sidebar.collapsed .btn-side-tool { justify-content: center; padding-left: 0; padding-right: 0; }
+
+        /* --- CONTENEDOR PRINCIPAL --- */
+        #main-container { flex: 1; display: flex; flex-direction: column; position: relative; overflow-y: auto; }
+
         header {
             background-color: var(--surface-color); padding: 15px 30px; border-bottom: 1px solid var(--border-color);
             display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10;
         }
-        header h1 { margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; color: var(--text-color); }
+        header h1 { margin: 0; font-size: 1.5rem; }
         .controls-row { display: flex; gap: 15px; align-items: center; }
 
-        /* --- PANTALLA DE INICIO --- */
-        main { padding: 40px; max-width: 1400px; margin: 0 auto; }
-        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
-        .action-buttons { display: flex; gap: 10px; }
+        /* --- PANTALLA DE INICIO (GRID) --- */
+        main { padding: 40px; max-width: 1400px; margin: 0 auto; width: 100%; }
+        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
 
         .note-card {
             background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 12px;
-            padding: 20px; height: 250px; display: flex; flex-direction: column; cursor: pointer; position: relative;
-            overflow: hidden; box-shadow: 0 4px 6px var(--shadow); transition: transform 0.2s, box-shadow 0.2s;
+            padding: 20px; height: 250px; display: flex; flex-direction: column; cursor: pointer; position: relative; box-shadow: 0 4px 6px var(--shadow);
         }
         .note-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px var(--shadow); background-color: var(--card-hover); }
-        
         .note-card-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .note-card-preview { font-size: 0.95rem; opacity: 0.7; flex: 1; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; line-height: 1.5; }
-        .note-card-footer { margin-top: 15px; font-size: 0.8rem; opacity: 0.5; display: flex; justify-content: space-between; align-items: center; }
+        .note-card-preview { font-size: 0.95rem; opacity: 0.7; flex: 1; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; }
+        .note-card-footer { margin-top: 15px; font-size: 0.8rem; opacity: 0.5; }
         
         .btn-delete-card {
             position: absolute; top: 15px; right: 15px; background: rgba(255, 77, 77, 0.2); color: #ff4d4d;
-            border: none; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center;
-            justify-content: center; opacity: 0; transition: opacity 0.2s;
+            border: none; border-radius: 50%; width: 30px; height: 30px; opacity: 0; transition: opacity 0.2s;
         }
         .note-card:hover .btn-delete-card { opacity: 1; }
-        .btn-delete-card:hover { background: #ff4d4d; color: white; }
 
-        /* --- MODAL (VENTANA SUPERPUESTA) --- */
+        /* --- MODAL (VENTANA SUPERPUESTA DEL EDITOR) --- */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75);
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center;
             z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
         }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
 
         .modal-content {
-            background-color: var(--bg-color); width: 95%; max-width: 856px; height: 90vh;
+            background-color: var(--bg-color); width: 95%; max-width: 900px; height: 90%;
             border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            border: 1px solid var(--border-color); overflow: hidden; transform: translateY(20px); transition: transform 0.3s ease, width 0.3s ease, height 0.3s ease, max-width 0.3s ease;
+            border: 1px solid var(--border-color); overflow: hidden; transform: translateY(20px); transition: transform 0.3s ease, width 0.3s, max-width 0.3s, height 0.3s;
         }
         .modal-overlay.active .modal-content { transform: translateY(0); }
-
-        /* Clase de pantalla completa */
-        .modal-content.maximized {
-            width: 100% !important;
-            max-width: 100% !important;
-            height: 100% !important;
-            border-radius: 0 !important;
-            border: none !important;
-            transform: translateY(0) !important;
-        }
+        .modal-content.maximized { width: 100% !important; max-width: 100% !important; height: 100% !important; border-radius: 0 !important; border: none !important; }
 
         .modal-header {
             padding: 20px 30px; border-bottom: 1px solid var(--border-color); background-color: var(--surface-color);
             display: flex; justify-content: space-between; align-items: center;
         }
-        
-        .title-input {
-            width: 50%; font-size: 1.8rem; font-weight: bold; background: transparent; border: none;
-            color: var(--text-color); outline: none;
-        }
-
+        .title-input { width: 50%; font-size: 1.8rem; font-weight: bold; background: transparent; border: none; color: var(--text-color); outline: none; }
         .header-controls { display: flex; align-items: center; gap: 15px; }
 
-        .btn-close-modal, .btn-maximize-modal {
+        .btn-icon-head {
             background: transparent; border: 1px solid var(--border-color); font-size: 1.2rem; color: var(--text-color);
             width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
         }
-        .btn-close-modal:hover, .btn-maximize-modal:hover { background-color: var(--toolbar-bg); }
+        .btn-icon-head:hover { background-color: var(--toolbar-bg); }
 
-        /* --- CUERPO DEL MODAL DIVIDIDO EN PANELES --- */
+        /* --- EDITOR DE BLOQUES --- */
         .modal-body { display: flex; flex: 1; overflow: hidden; }
         .main-editor-area { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+        .editor-wrapper { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; align-items: center; }
         
-        /* --- EDITOR Y WRAPPER --- */
-        .editor-wrapper { flex: 1; overflow-y: auto; padding: 30px; display: flex; justify-content: center; cursor: text; }
-        .editor { width: 100%; max-width: 750px; min-height: 100%; outline: none; line-height: 1.6; font-size: 18px; padding-bottom: 50px; cursor: text; }
-        .editor:empty:before { content: attr(data-placeholder); color: var(--text-color); opacity: 0.4; pointer-events: none; }
-        .editor * { color: var(--text-color) !important; background-color: transparent !important; }
-        .editor > div, .editor > p { margin-bottom: 0.8em; }
-        .editor h1 { font-size: 1.5em; margin-top: 20px; margin-bottom: 10px; color: var(--accent-color) !important; }
-        .editor h2 { font-size: 1.25em; margin-top: 15px; margin-bottom: 10px; font-weight: bold; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;}
-        .editor h3 { font-size: 1.1em; margin-top: 10px; margin-bottom: 8px; font-weight: bold; opacity: 0.9; }
-        .editor u { text-decoration-color: var(--accent-color); text-decoration-thickness: 2px; }
-        .editor font[face="Consolas"] { font-family: 'Consolas', monospace; background-color: var(--surface-color) !important; padding: 2px 6px; border-radius: 4px; }
+        .sections-container { width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 20px; padding-bottom: 30px; }
+        .section-block { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
+        .section-header { background-color: var(--toolbar-bg); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+        .sec-title-input { font-size: 1.1rem; font-weight: bold; border: none; background: transparent; color: var(--text-color); flex: 1; }
+        .sec-limit-wrapper { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #aaa; margin-right: 15px; }
+        .sec-limit-input { width: 60px; text-align: center; }
+        .btn-del-sec { background: transparent; color: #ff4d4d; border: 1px solid #ff4d4d; border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; }
 
-        /* ESTILO PARA LOS COMANDOS INVISIBLES Y PAUSAS */
-        .editor span.ghost-text, .editor span.ghost-text * {
-            color: #8a8a8a !important; 
-            font-style: italic !important;
-            opacity: 0.8;
-        }
+        .section-editor { width: 100%; min-height: 80px; outline: none; line-height: 1.6; font-size: 18px; padding: 15px; cursor: text; color: var(--text-color); }
+        .section-editor:empty:before { content: attr(data-placeholder); opacity: 0.4; }
+        .section-editor > div, .section-editor > p { margin-bottom: 0.8em; }
+        .section-editor u { text-decoration-color: var(--accent-color); text-decoration-thickness: 2px; }
+        .section-editor font[face="Consolas"] { font-family: 'Consolas', monospace; background-color: var(--surface-color) !important; padding: 2px 6px; border-radius: 4px; }
 
-        /* --- PANEL LATERAL DE VIDEOS --- */
-        .video-panel {
-            width: 320px; background-color: var(--toolbar-bg); border-left: 1px solid var(--border-color);
-            display: none; flex-direction: column; transition: all 0.3s ease;
-        }
+        .section-footer { padding: 5px 15px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; font-size: 0.8rem; color: #888; background-color: var(--surface-color); }
+
+        /* SEMÁFORO Y CÓDIGO INVISIBLE */
+        .section-editor.goal-reached { color: var(--success-color); }
+        .section-editor.goal-reached * { color: var(--success-color); }
+        .excess-text, .excess-text * { color: #ff4757 !important; text-decoration: underline wavy #ff4757; }
+        span.ghost-text, span.ghost-text * { color: #8a8a8a !important; font-style: italic !important; opacity: 0.8; text-decoration: none !important; }
+
+        .btn-add-section { background: transparent; border: 2px dashed var(--border-color); color: var(--text-color); padding: 15px; width: 100%; max-width: 800px; border-radius: 8px; font-weight: bold; margin: 0 auto; }
+
+        /* --- PANELES SECUNDARIOS (TOOLBAR / VIDEOS) --- */
+        .video-panel { width: 320px; background-color: var(--toolbar-bg); border-left: 1px solid var(--border-color); display: none; flex-direction: column; }
         .video-panel.active { display: flex; }
-        .video-panel-header { padding: 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .video-panel-header { padding: 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; }
         .video-list { flex: 1; overflow-y: auto; padding: 15px; list-style: none; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-        
-        .video-item {
-            background-color: var(--surface-color); padding: 10px; border-radius: 8px;
-            border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;
-        }
-        .video-info { display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
-        .video-name { font-size: 0.9rem; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .video-dur { font-size: 0.8rem; opacity: 0.7; color: var(--accent-color); }
-        .video-del { color: #ff4d4d; background: transparent; border: none; cursor: pointer; padding: 5px; }
+        .video-item { background-color: var(--surface-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; }
+        .video-add-form { padding: 15px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; background-color: var(--bg-color); }
 
-        .video-add-form {
-            padding: 15px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; background-color: var(--bg-color);
-        }
-        .time-inputs { display: flex; gap: 10px; align-items: center; }
-        .time-inputs input[type="number"] { width: 60px; text-align: center; }
-
-        /* --- TOOLBAR Y FOOTER (ABAJO) --- */
-        .toolbar {
-            display: flex; padding: 4px 16px; background-color: var(--toolbar-bg);
-            border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);
-            flex-wrap: wrap; align-items: center;
-        }
-        
-        .modal-footer {
-            background-color: var(--surface-color); padding: 15px 30px;
-            display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color);
-        }
-        .time-badge { background-color: var(--bg-color); padding: 6px 15px; border-radius: 20px; border: 1px solid var(--border-color); font-weight: bold; transition: all 0.2s; }
+        .toolbar { display: flex; padding: 4px 16px; background-color: var(--toolbar-bg); border-top: 1px solid var(--border-color); flex-wrap: wrap; align-items: center; }
+        .modal-footer { background-color: var(--surface-color); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); }
+        .time-badge { background-color: var(--bg-color); padding: 6px 15px; border-radius: 20px; border: 1px solid var(--border-color); font-weight: bold; }
         .time-badge.accent { color: var(--accent-color); }
-        
-        /* Estilo especial para el contador de selección */
-        .time-badge.selection-badge { border-style: dashed; border-color: var(--accent-color); color: var(--text-color); }
+        .time-badge.selection-badge { border-style: dashed; border-color: var(--accent-color); }
 
-        .font-selector { display: flex; align-items: center; gap: 2px; font-size: 0.9rem; }
-
-        /* --- CLASE DE MODO LECTURA --- */
         .mode-lectura .toolbar, .mode-lectura .modal-footer, .mode-lectura .video-panel { display: none !important; }
-        .mode-lectura .editor-wrapper, .mode-lectura .editor { cursor: default; }
-
+        .mode-lectura .editor-wrapper, .mode-lectura .section-editor { cursor: default; }
+        .mode-lectura .section-header, .mode-lectura .btn-add-section { display: none; }
+        .mode-lectura .section-block { border: none; margin-bottom: 15px; background: transparent;}
+        .mode-lectura .section-footer { display: none; }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>🎬 YT Script Pro</h1>
-        <div class="controls-row">
-            <select id="pace-select" title="Velocidad de lectura">
-                <option value="130">130 ppm</option>
-                <option value="145" selected>145 ppm</option>
-                <option value="160">160 ppm</option>
-            </select>
+    <!-- BARRA LATERAL -->
+    <aside id="sidebar" class="expanded">
+        <div class="sidebar-header">
+            <button class="btn-hamburger" id="btn-hamburger">☰</button>
+            <span class="sidebar-title">Menú Principal</span>
         </div>
-    </header>
-
-    <main>
-        <div class="header-actions">
-            <h2>Mis Guiones</h2>
-            <div class="action-buttons">
-                <input type="file" id="import-file" style="display: none;" accept=".json">
-                <button id="btn-import" class="btn-secondary" title="Restaurar una copia de seguridad">Cargar Backup</button>
-                <button id="btn-export" class="btn-secondary" title="Descargar todos tus guiones y ajustes">Guardar Backup</button>
-                <button id="btn-new-note" class="btn-primary">+ Nuevo Guion</button>
+        
+        <div class="storage-section" title="Espacio ocupado por tus guiones comprimidos">
+            <div class="storage-icon">📦</div>
+            <div class="storage-details">
+                <div class="storage-meter"><div id="storage-bar"></div></div>
+                <span id="storage-text">Calculando...</span>
             </div>
         </div>
-        <div class="notes-grid" id="notes-grid"></div>
-    </main>
 
-    <div class="modal-overlay" id="editor-modal">
-        <div class="modal-content" id="modal-content">
-            
-            <div class="modal-header">
-                <input type="text" id="note-title" class="title-input" placeholder="Título del guion...">
+        <ul class="sidebar-notes-list" id="sidebar-notes-list">
+            <!-- Títulos en la barra lateral -->
+        </ul>
+
+        <div class="sidebar-tools">
+            <input type="file" id="import-file" style="display: none;" accept=".json">
+            <button id="btn-import-side" class="btn-side-tool" title="Restaurar una copia de seguridad">
+                <span>📥</span> <span class="tool-label">Cargar Backup</span>
+            </button>
+            <button id="btn-export-side" class="btn-side-tool" title="Descargar todos tus guiones">
+                <span>📤</span> <span class="tool-label">Guardar Backup</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div id="main-container">
+        <header>
+            <h1>🎬 YT Script Pro</h1>
+            <div class="controls-row">
+                <select id="pace-select" title="Velocidad de lectura">
+                    <option value="130">130 ppm</option>
+                    <option value="145" selected>145 ppm</option>
+                    <option value="160">160 ppm</option>
+                </select>
+            </div>
+        </header>
+
+        <main>
+            <div class="header-actions">
+                <h2>Todos mis Guiones</h2>
+                <button id="btn-new-note" class="btn-primary">+ Nuevo Guion Libre</button>
+            </div>
+            <div class="notes-grid" id="notes-grid"></div>
+        </main>
+
+        <!-- MODAL (EDITOR) -->
+        <div class="modal-overlay" id="editor-modal">
+            <div class="modal-content" id="modal-content">
                 
-                <div class="header-controls">
-                    <button id="btn-toggle-video" class="btn-primary btn-small" style="background-color: var(--toolbar-bg); border: 1px solid var(--border-color);">📹 Videos</button>
-                    <select id="mode-select" title="Cambiar modo de vista">
-                        <option value="editor">Edición</option>
-                        <option value="lectura">Lectura</option>
-                    </select>
-                    <button class="btn-maximize-modal" id="btn-maximize" title="Pantalla completa">🗖</button>
-                    <button class="btn-close-modal" id="btn-close-modal" title="Cerrar y guardar">✕</button>
-                </div>
-            </div>
-
-            <div class="modal-body">
-                <div class="main-editor-area">
-                    <div class="editor-wrapper" id="editor-wrapper">
-                        <div id="editor" class="editor" contenteditable="true" data-placeholder="Comienza a escribir tu guion aquí... Usa '===' para añadir pausas de 5s. Lo escrito entre [ ] no se cuenta."></div>
+                <div class="modal-header">
+                    <input type="text" id="note-title" class="title-input" placeholder="Título del guion...">
+                    <div class="header-controls">
+                        <button id="btn-toggle-video" class="btn-primary btn-small" style="background-color: var(--toolbar-bg); border: 1px solid var(--border-color);">📹 Videos</button>
+                        <select id="mode-select">
+                            <option value="editor">Edición</option>
+                            <option value="lectura">Lectura</option>
+                        </select>
+                        <button class="btn-icon-head" id="btn-maximize" title="Pantalla completa">🗖</button>
+                        <button class="btn-icon-head" id="btn-close-modal" title="Cerrar y guardar">✕</button>
                     </div>
+                </div>
 
-                    <div class="toolbar" id="toolbar">
-                        <button onclick="format('bold')" title="Negrita (Ctrl+B)"><b>B</b></button>
-                        <button onclick="format('italic')" title="Cursiva (Ctrl+I)"><i>I</i></button>
-                        <button onclick="format('underline')" title="Subrayado (Ctrl+U)"><u>U</u></button>
-                        <span style="border-right: 1px solid var(--border-color); height: 20px; margin: 0 5px;"></span>
-                        <button onclick="format('formatBlock', 'H1')" title="Título 1">H1</button>
-                        <button onclick="format('formatBlock', 'H2')" title="Título 2">H2</button>
-                        <button onclick="format('formatBlock', 'H3')" title="Título 3">H3</button>
-                        <span style="border-right: 1px solid var(--border-color); height: 20px; margin: 0 5px;"></span>
-                        <button onclick="format('fontName', 'Consolas')" title="Fuente Consolas">&lt;/&gt;</button>
-                        <button onclick="format('insertUnorderedList')" title="Lista">● Lista</button>
-                        <span style="flex: 1;"></span>
-                        
-                        <div class="font-selector">
-                            <label>Tamaño:</label>
+                <div class="modal-body">
+                    <div class="main-editor-area">
+                        <div class="editor-wrapper" id="editor-wrapper">
+                            <div class="sections-container" id="sections-container"></div>
+                            <button class="btn-add-section" id="btn-add-section">+ Añadir Nueva Sección</button>
+                        </div>
+
+                        <div class="toolbar" id="toolbar">
+                            <button onclick="format('bold')"><b>B</b></button>
+                            <button onclick="format('italic')"><i>I</i></button>
+                            <button onclick="format('underline')"><u>U</u></button>
+                            <span style="border-right: 1px solid var(--border-color); height: 20px; margin: 0 5px;"></span>
+                            <button onclick="format('formatBlock', 'H1')">H1</button>
+                            <button onclick="format('formatBlock', 'H2')">H2</button>
+                            <button onclick="format('formatBlock', 'H3')">H3</button>
+                            <span style="border-right: 1px solid var(--border-color); height: 20px; margin: 0 5px;"></span>
+                            <button onclick="format('fontName', 'Consolas')">&lt;/&gt;</button>
+                            <span style="flex: 1;"></span>
                             <select id="font-size">
-                                <option value="12px">12px</option>
-                                <option value="14px">14px</option>
                                 <option value="16px">16px</option>
                                 <option value="18px" selected>18px</option>
                                 <option value="20px">20px</option>
@@ -263,48 +306,39 @@
                             </select>
                         </div>
                     </div>
-                </div>
 
-                <div class="video-panel" id="video-panel">
-                    <div class="video-panel-header">
-                        <span>Tiempos de Clips / B-Roll</span>
-                    </div>
-                    
-                    <ul class="video-list" id="video-list">
-                    </ul>
-
-                    <div class="video-add-form">
-                        <input type="text" id="vid-name" placeholder="Ej. Gameplay final" autocomplete="off">
-                        <div class="time-inputs">
-                            <input type="number" id="vid-min" placeholder="Min" min="0" max="59">
-                            <span>:</span>
-                            <input type="number" id="vid-sec" placeholder="Seg" min="0" max="59">
-                            <button id="btn-add-video" class="btn-primary btn-small" style="flex: 1;">Añadir</button>
+                    <div class="video-panel" id="video-panel">
+                        <div class="video-panel-header">Tiempos de Clips</div>
+                        <ul class="video-list" id="video-list"></ul>
+                        <div class="video-add-form">
+                            <input type="text" id="vid-name" placeholder="Ej. Diapositiva">
+                            <div class="time-inputs">
+                                <input type="number" id="vid-min" placeholder="Min" min="0"> :
+                                <input type="number" id="vid-sec" placeholder="Seg" min="0" max="59">
+                                <button id="btn-add-video" class="btn-primary btn-small">Añadir</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="modal-footer" id="modal-footer">
-                <div style="display: flex; gap: 20px; font-size: 0.9rem; align-items: center;">
-                    <span id="word-count">0 palabras</span>
-                    <span id="save-status" style="opacity: 0.5;">Guardado</span>
-                    <!-- NUEVO INDICADOR DE SINCRONIZACIÓN -->
-                    <span id="sync-status" style="color: var(--accent-color); font-weight: bold;"></span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div class="time-badge" id="script-time" title="Tiempo de lectura del texto total">Lectura: 00:00</div>
-                    <div class="time-badge selection-badge" id="selected-time" title="Tiempo del texto subrayado" style="display: none;">Selección: 00:00</div>
-                    <div class="time-badge" id="clips-time" title="Suma de videos en el panel">Clips: 00:00</div>
-                    <div class="time-badge accent" id="total-time" title="Duración final estimada">Total: 00:00</div>
+                <div class="modal-footer" id="modal-footer">
+                    <div style="display: flex; gap: 20px; font-size: 0.9rem; align-items: center;">
+                        <span id="word-count">0 palabras en total</span>
+                        <span id="sync-status" style="color: var(--accent-color); font-weight: bold;"></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="time-badge" id="script-time">Lectura: 00:00</div>
+                        <div class="time-badge selection-badge" id="selected-time" style="display: none;">Selección: 00:00</div>
+                        <div class="time-badge" id="clips-time">Clips: 00:00</div>
+                        <div class="time-badge accent" id="total-time">Total: 00:00</div>
+                    </div>
                 </div>
             </div>
-
         </div>
     </div>
 
     <script>
-        // --- INICIALIZACIÓN DE FIREBASE ---
+        // --- 1. CONFIGURACIÓN FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyBnX__R6A6lQw_KuzZxqHRkzZyj10S_4wU",
             authDomain: "aula-virtual-79e4d.firebaseapp.com",
@@ -312,151 +346,202 @@
             projectId: "aula-virtual-79e4d",
             storageBucket: "aula-virtual-79e4d.firebasestorage.app",
             messagingSenderId: "384731632952",
-            appId: "1:384731632952:web:9b4facff98bc7f6ebf5dcd",
-            measurementId: "G-SR9D2CJX40"
+            appId: "1:384731632952:web:9b4facff98bc7f6ebf5dcd"
         };
-
         firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const dbRef = database.ref('yt_script_writer_notes');
+        const dbRef = firebase.database().ref('yt_script_writer_compressed');
 
-        // Referencias del DOM
-        const editor = document.getElementById('editor');
-        const editorWrapper = document.getElementById('editor-wrapper');
+        // --- 2. BÓVEDA INDEXED-DB (Almacenamiento Infinito Local) ---
+        const DB_NAME = "YTScriptProDB";
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(DB_NAME, 1);
+                req.onupgradeneeded = (e) => e.target.result.createObjectStore("store");
+                req.onsuccess = (e) => resolve(e.target.result);
+                req.onerror = (e) => reject(e);
+            });
+        }
+        async function setLocalVault(key, val) {
+            const db = await initDB();
+            const tx = db.transaction("store", "readwrite");
+            tx.objectStore("store").put(val, key);
+            return new Promise(res => tx.oncomplete = res);
+        }
+        async function getLocalVault(key) {
+            const db = await initDB();
+            const tx = db.transaction("store", "readonly");
+            const req = tx.objectStore("store").get(key);
+            return new Promise(res => req.onsuccess = () => res(req.result));
+        }
+
+        // --- REFERENCIAS DEL DOM ---
+        const sidebar = document.getElementById('sidebar');
+        const sectionsContainer = document.getElementById('sections-container');
         const noteTitle = document.getElementById('note-title');
         const notesGridUI = document.getElementById('notes-grid');
-        const saveStatus = document.getElementById('save-status');
+        const sidebarListUI = document.getElementById('sidebar-notes-list');
         const syncStatus = document.getElementById('sync-status');
+        const storageText = document.getElementById('storage-text');
+        const storageBar = document.getElementById('storage-bar');
         const modal = document.getElementById('editor-modal');
         const modalContent = document.getElementById('modal-content');
-        const modeSelect = document.getElementById('mode-select');
-        const videoPanel = document.getElementById('video-panel');
-        const btnToggleVideo = document.getElementById('btn-toggle-video');
-        const videoListUI = document.getElementById('video-list');
-        const vidNameInput = document.getElementById('vid-name');
-        const vidMinInput = document.getElementById('vid-min');
-        const vidSecInput = document.getElementById('vid-sec');
-        const btnAddVideo = document.getElementById('btn-add-video');
-        const btnExport = document.getElementById('btn-export');
-        const btnImport = document.getElementById('btn-import');
-        const importFile = document.getElementById('import-file');
-        const btnMaximize = document.getElementById('btn-maximize');
-        const selectedTimeDisplay = document.getElementById('selected-time');
-
-        let notes = JSON.parse(localStorage.getItem('yt-pro-notes')) || [];
+        
+        let notes = [];
         let currentNoteId = null;
         let currentWPM = parseInt(localStorage.getItem('yt-pro-pace')) || 145;
         let autoSaveTimer;
 
-        initApp();
-
-        function initApp() {
+        // --- 3. INICIALIZACIÓN Y SINCRONIZACIÓN ---
+        async function bootApp() {
             document.getElementById('pace-select').value = currentWPM;
-            if (notes.length === 0) createNewNote(false);
-            renderNotesGrid();
+            
+            // Intentar cargar bóveda local primero (Carga ultrarrápida offline)
+            const localData = await getLocalVault('compressed_notes');
+            if (localData) {
+                notes = JSON.parse(LZString.decompressFromUTF16(localData) || '[]');
+                verifyTemplate();
+                renderAllUIs();
+                updateStorageMeter(localData);
+            } else {
+                verifyTemplate();
+            }
 
-            // Sincronización en tiempo real desde Firebase
-            dbRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    notes = data;
-                    localStorage.setItem('yt-pro-notes', JSON.stringify(notes));
-                    renderNotesGrid();
-                    
-                    if (syncStatus) {
+            // Sincronización en tiempo real con Firebase
+            dbRef.on('value', async (snapshot) => {
+                const cloudCompressed = snapshot.val();
+                if (cloudCompressed) {
+                    const cloudJSON = LZString.decompressFromUTF16(cloudCompressed);
+                    if (cloudJSON) {
+                        notes = JSON.parse(cloudJSON);
+                        await setLocalVault('compressed_notes', cloudCompressed);
+                        renderAllUIs();
+                        updateStorageMeter(cloudCompressed);
                         syncStatus.textContent = "☁️ Sincronizado";
                         setTimeout(() => syncStatus.textContent = "", 2000);
                     }
                 }
             });
         }
+        bootApp();
 
-        // --- SISTEMA DE BACKUP LOCAL ---
-        btnExport.addEventListener('click', () => {
-            const backupData = {
-                notes: notes,
-                pace: localStorage.getItem('yt-pro-pace') || 145,
-                fontsize: localStorage.getItem('yt-pro-fontsize') || '18px'
-            };
+        function verifyTemplate() {
+            if (!notes.some(n => n.title === 'Examen Profesional - Portafolio')) {
+                notes.push({ 
+                    id: Date.now().toString(), title: 'Examen Profesional - Portafolio', updatedAt: Date.now(), videos: [],
+                    sections: [
+                        { id: 'sec1', title: 'Introducción y Contexto', content: '', limit: 290 },
+                        { id: 'sec2', title: 'Autoevaluación', content: '', limit: 435 },
+                        { id: 'sec3', title: 'Elección de Evidencias (Proyectos)', content: '', limit: 580 },
+                        { id: 'sec4', title: 'Método de Reflexión (Gibbs)', content: '', limit: 580 },
+                        { id: 'sec5', title: 'Aprendizajes y Compromisos', content: '', limit: 290 }
+                    ]
+                });
+                triggerMasterSave();
+            }
+        }
 
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
+        // --- 4. MOTOR DE GUARDADO Y COMPRESIÓN (LZW) ---
+        async function triggerMasterSave(immediate = false) {
+            syncStatus.textContent = "⚙️ Comprimiendo...";
+            clearTimeout(autoSaveTimer);
             
-            const date = new Date();
-            const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-            downloadAnchorNode.setAttribute("download", `YT_ScriptPro_Backup_${dateString}.json`);
-            
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-        });
-
-        btnImport.addEventListener('click', () => {
-            importFile.click(); 
-        });
-
-        importFile.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (data.notes && Array.isArray(data.notes)) {
-                        notes = data.notes;
-                        saveToLocal(); // Esto empujará el backup restaurado a Firebase automáticamente
+            const saveFunc = async () => {
+                // Actualizar la nota abierta actualmente antes de guardar
+                if (currentNoteId) {
+                    const note = notes.find(n => n.id === currentNoteId);
+                    if (note) {
+                        note.title = noteTitle.value;
+                        note.updatedAt = Date.now();
+                        note.sections = [];
+                        document.querySelectorAll('.section-block').forEach(block => {
+                            note.sections.push({
+                                id: block.getAttribute('data-sec-id'),
+                                title: block.querySelector('.sec-title-input').value,
+                                content: block.querySelector('.section-editor').innerHTML,
+                                limit: parseInt(block.querySelector('.sec-limit-input').value) || 0
+                            });
+                            updateSectionFormatting(block.querySelector('.section-editor'));
+                        });
+                        updateGlobalStats();
                     }
-                    if (data.pace) localStorage.setItem('yt-pro-pace', data.pace);
-                    if (data.fontsize) localStorage.setItem('yt-pro-fontsize', data.fontsize);
-                    
-                    alert('✅ Backup restaurado y sincronizado con éxito. La página se actualizará.');
-                    location.reload();
-                } catch (err) {
-                    alert('❌ Error: El archivo no es un backup válido o está dañado.');
                 }
-                importFile.value = ''; 
+                
+                // Aplicar la Compresión de los Dioses
+                const jsonString = JSON.stringify(notes);
+                const compressedString = LZString.compressToUTF16(jsonString);
+                
+                // Guardar en la bóveda local (IndexedDB)
+                await setLocalVault('compressed_notes', compressedString);
+                updateStorageMeter(compressedString);
+                renderSidebarList(); // Refrescar títulos
+                
+                // Empujar a Firebase
+                syncStatus.textContent = "☁️ Subiendo...";
+                dbRef.set(compressedString)
+                    .then(() => { syncStatus.textContent = "☁️ Sincronizado"; setTimeout(() => syncStatus.textContent = "", 2000); })
+                    .catch(() => { syncStatus.textContent = "🔌 Guardado Offline"; });
             };
-            reader.readAsText(file);
+            
+            if (immediate) saveFunc();
+            else autoSaveTimer = setTimeout(saveFunc, 800);
+        }
+
+        // --- MEDIDOR DE ALMACENAMIENTO ---
+        function updateStorageMeter(compressedData) {
+            // Calculamos el peso en bytes. Caracteres UTF-16 pesan 2 bytes.
+            const bytes = compressedData.length * 2;
+            const kb = (bytes / 1024).toFixed(2);
+            
+            // Límite visual: 50 MB (para demostrar que sobra espacio)
+            const MAX_KB = 51200; 
+            const percentage = Math.min((bytes / 1024 / MAX_KB) * 100, 100);
+            
+            storageText.textContent = `${kb} KB / 50 MB`;
+            storageBar.style.width = `${percentage}%`;
+        }
+
+        // --- INTERFAZ UI ---
+        document.getElementById('btn-hamburger').addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
         });
 
-        // --- FUNCIONES CORE ---
-        function createNewNote(openModal = true) {
-            const newNote = { 
-                id: Date.now().toString(), 
-                title: '', 
-                content: '', 
-                updatedAt: Date.now(),
-                videos: [] 
-            };
-            notes.push(newNote);
-            saveToLocal();
+        function renderAllUIs() {
             renderNotesGrid();
-            if(openModal) openNoteModal(newNote.id);
+            renderSidebarList();
+        }
+
+        function renderSidebarList() {
+            sidebarListUI.innerHTML = '';
+            const sortedNotes = [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
+            sortedNotes.forEach(note => {
+                const li = document.createElement('li');
+                li.className = 'sidebar-note-item';
+                li.onclick = () => openNoteModal(note.id);
+                li.innerHTML = `<div class="note-icon">📝</div><div class="sidebar-note-title">${note.title || 'Sin Título'}</div>`;
+                sidebarListUI.appendChild(li);
+            });
         }
 
         function renderNotesGrid() {
             notesGridUI.innerHTML = '';
             const sortedNotes = [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
-            
             sortedNotes.forEach(note => {
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = note.content;
-                const plainTextPreview = tempDiv.innerText || 'Sin contenido...';
-                
-                // Formato de hora forzado a Monterrey para mantener precisión
+                let previewText = '';
+                if(note.sections && note.sections.length > 0) {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = note.sections[0].content;
+                    previewText = tempDiv.innerText || 'Sin contenido...';
+                }
                 const dateObj = new Date(note.updatedAt);
-                const dateString = dateObj.toLocaleDateString('es-MX', { timeZone: 'America/Monterrey' }) + ' ' + dateObj.toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: '2-digit', minute:'2-digit' });
+                const dateString = dateObj.toLocaleDateString('es-MX', { timeZone: 'America/Monterrey' }) + ' ' + dateObj.toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour:'2-digit', minute:'2-digit' });
 
                 const card = document.createElement('div');
                 card.className = 'note-card';
                 card.onclick = () => openNoteModal(note.id);
-                
                 card.innerHTML = `
-                    <button class="btn-delete-card" onclick="deleteNote('${note.id}', event)" title="Eliminar">✕</button>
+                    <button class="btn-delete-card" onclick="deleteNote('${note.id}', event)">✕</button>
                     <div class="note-card-title">${note.title || 'Guion sin título'}</div>
-                    <div class="note-card-preview">${plainTextPreview}</div>
+                    <div class="note-card-preview">${previewText}</div>
                     <div class="note-card-footer"><span>Editado: ${dateString}</span></div>
                 `;
                 notesGridUI.appendChild(card);
@@ -465,11 +550,10 @@
 
         function deleteNote(id, event) {
             event.stopPropagation();
-            if (confirm('¿Eliminar este guion permanentemente?')) {
+            if (confirm('¿Eliminar permanentemente?')) {
                 notes = notes.filter(n => n.id !== id);
-                if (notes.length === 0) createNewNote(false);
-                saveToLocal();
-                renderNotesGrid();
+                triggerMasterSave(true);
+                renderAllUIs();
             }
         }
 
@@ -478,391 +562,223 @@
             if (note) {
                 currentNoteId = id;
                 noteTitle.value = note.title;
-                editor.innerHTML = note.content;
+                if (!note.sections) note.sections = [{ id: 's1', title: 'Guion Principal', content: note.content || '', limit: 0 }];
+                if (!note.videos) note.videos = [];
                 
-                if(!note.videos) note.videos = [];
-                
-                modeSelect.value = 'editor';
+                document.getElementById('mode-select').value = 'editor';
                 modalContent.classList.remove('mode-lectura');
-                editor.setAttribute('contenteditable', 'true');
-
+                
+                renderSectionsUI(note.sections);
+                renderVideoList();
+                
                 modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
                 
                 const savedSize = localStorage.getItem('yt-pro-fontsize') || '18px';
                 document.getElementById('font-size').value = savedSize;
-                editor.style.fontSize = savedSize;
-
-                renderVideoList();
-                applySyntaxHighlighting();
-                updateStats();
-                
-                selectedTimeDisplay.style.display = 'none';
-                editor.focus();
-            }
-        }
-
-        function closeNoteModal() {
-            triggerAutoSave(true); 
-            modal.classList.remove('active');
-            document.body.style.overflow = '';
-            
-            modalContent.classList.remove('maximized');
-            btnMaximize.textContent = '🗖';
-            btnMaximize.title = 'Pantalla completa';
-
-            renderNotesGrid();
-        }
-
-        // --- SISTEMA DE PANTALLA COMPLETA ---
-        btnMaximize.addEventListener('click', () => {
-            modalContent.classList.toggle('maximized');
-            if (modalContent.classList.contains('maximized')) {
-                btnMaximize.textContent = '🗗';
-                btnMaximize.title = 'Restaurar tamaño';
-            } else {
-                btnMaximize.textContent = '🗖';
-                btnMaximize.title = 'Pantalla completa';
-            }
-        });
-
-        btnToggleVideo.addEventListener('click', () => {
-            videoPanel.classList.toggle('active');
-        });
-
-        btnAddVideo.addEventListener('click', () => {
-            const name = vidNameInput.value.trim() || 'Clip sin título';
-            const min = parseInt(vidMinInput.value) || 0;
-            const sec = parseInt(vidSecInput.value) || 0;
-            
-            if (min === 0 && sec === 0) return; 
-            
-            const totalSeconds = (min * 60) + sec;
-            const noteIndex = notes.findIndex(n => n.id === currentNoteId);
-            
-            if(noteIndex !== -1) {
-                notes[noteIndex].videos.push({
-                    id: Date.now().toString(),
-                    name: name,
-                    durationSecs: totalSeconds
+                document.querySelectorAll('.section-editor').forEach(ed => {
+                    ed.style.fontSize = savedSize;
+                    updateSectionFormatting(ed);
                 });
-                
-                vidNameInput.value = '';
-                vidMinInput.value = '';
-                vidSecInput.value = '';
-                vidNameInput.focus();
-                
-                triggerAutoSave(true);
-                renderVideoList();
-                updateStats();
-            }
-        });
-
-        function deleteVideoObj(vidId) {
-            const noteIndex = notes.findIndex(n => n.id === currentNoteId);
-            if(noteIndex !== -1) {
-                notes[noteIndex].videos = notes[noteIndex].videos.filter(v => v.id !== vidId);
-                triggerAutoSave(true);
-                renderVideoList();
-                updateStats();
+                updateGlobalStats();
             }
         }
 
-        window.deleteVideoObj = deleteVideoObj;
+        document.getElementById('btn-close-modal').addEventListener('click', () => {
+            triggerMasterSave(true);
+            modal.classList.remove('active');
+            renderAllUIs();
+        });
+
+        // --- SISTEMA DE SECCIONES (IGUAL A LA V12) ---
+        function renderSectionsUI(sections) {
+            sectionsContainer.innerHTML = '';
+            sections.forEach(sec => {
+                const block = document.createElement('div');
+                block.className = 'section-block';
+                block.setAttribute('data-sec-id', sec.id);
+                block.innerHTML = `
+                    <div class="section-header">
+                        <input type="text" class="sec-title-input" value="${sec.title}">
+                        <div class="sec-limit-wrapper"><label>Límite:</label><input type="number" class="sec-limit-input" value="${sec.limit || 0}" min="0"></div>
+                        <button class="btn-del-sec" onclick="deleteSection('${sec.id}')">✕</button>
+                    </div>
+                    <div class="section-editor" contenteditable="true" data-placeholder="Contenido...">${sec.content}</div>
+                    <div class="section-footer"><span class="sec-word-count">0 / ${sec.limit || '∞'} palabras</span></div>
+                `;
+                sectionsContainer.appendChild(block);
+                
+                const ed = block.querySelector('.section-editor');
+                ed.addEventListener('input', () => triggerMasterSave());
+                block.querySelector('.sec-title-input').addEventListener('input', () => triggerMasterSave());
+                block.querySelector('.sec-limit-input').addEventListener('input', () => triggerMasterSave(true));
+                
+                ed.addEventListener('paste', handlePaste);
+            });
+        }
+
+        document.getElementById('btn-add-section').addEventListener('click', () => {
+            const note = notes.find(n => n.id === currentNoteId);
+            if(note) {
+                note.sections.push({ id: 's' + Date.now(), title: 'Nueva Sección', content: '', limit: 0 });
+                renderSectionsUI(note.sections);
+                triggerMasterSave(true);
+            }
+        });
+
+        function deleteSection(secId) {
+            if(confirm('¿Borrar sección?')) {
+                const note = notes.find(n => n.id === currentNoteId);
+                note.sections = note.sections.filter(s => s.id !== secId);
+                renderSectionsUI(note.sections);
+                triggerMasterSave(true);
+            }
+        }
+        window.deleteSection = deleteSection;
+
+        // Semáforo Lógico
+        function updateSectionFormatting(editorEl) {
+            const block = editorEl.closest('.section-block');
+            const limit = parseInt(block.querySelector('.sec-limit-input').value) || 0;
+            
+            saveCaret(editorEl);
+            editorEl.querySelectorAll('.excess-text, .ghost-text').forEach(span => {
+                const frag = document.createDocumentFragment();
+                while(span.firstChild) frag.appendChild(span.firstChild);
+                span.parentNode.replaceChild(frag, span);
+            });
+            editorEl.normalize();
+
+            let html = editorEl.innerHTML;
+            const newHtml = html.replace(/(<[^>]+>)|(\[[\s\S]*?\]|===)/g, (match, tag, special) => tag ? tag : `<span class="ghost-text">${special}</span>`);
+            if (html !== newHtml) editorEl.innerHTML = newHtml;
+
+            let wordCount = 0; let limitReached = false;
+            const walker = document.createTreeWalker(editorEl, NodeFilter.SHOW_TEXT, null, false);
+            const textNodes = []; let node;
+            while(node = walker.nextNode()) textNodes.push(node);
+
+            for (let i = 0; i < textNodes.length; i++) {
+                const textNode = textNodes[i];
+                if (textNode.parentNode && textNode.parentNode.classList.contains('ghost-text')) continue;
+
+                if (limit > 0 && limitReached) { wrapNode(textNode, 'excess-text'); continue; }
+
+                const text = textNode.nodeValue;
+                const words = text.match(/\S+/g) || [];
+                
+                if (limit > 0 && (wordCount + words.length > limit)) {
+                    limitReached = true;
+                    const wordsNeeded = limit - wordCount;
+                    let match; let wordRegex = /\S+/g; let currentMatch = 0; let splitIndex = text.length;
+                    while ((match = wordRegex.exec(text)) !== null) {
+                        currentMatch++;
+                        if (currentMatch === wordsNeeded + 1) { splitIndex = match.index; break; }
+                    }
+                    const validText = text.substring(0, splitIndex);
+                    const excessText = text.substring(splitIndex);
+                    textNode.nodeValue = validText;
+                    if (excessText.length > 0) {
+                        const excessNode = document.createTextNode(excessText);
+                        const span = document.createElement('span'); span.className = 'excess-text'; span.appendChild(excessNode);
+                        textNode.parentNode.insertBefore(span, textNode.nextSibling);
+                    }
+                    wordCount += wordsNeeded;
+                } else { wordCount += words.length; }
+            }
+
+            block.querySelector('.sec-word-count').textContent = `${wordCount} / ${limit > 0 ? limit : '∞'} palabras`;
+            if (limit > 0 && wordCount >= (limit * 0.9)) editorEl.classList.add('goal-reached');
+            else editorEl.classList.remove('goal-reached');
+
+            restoreCaret(editorEl);
+        }
+
+        function wrapNode(textNode, className) {
+            const span = document.createElement('span'); span.className = className;
+            textNode.parentNode.insertBefore(span, textNode); span.appendChild(textNode);
+        }
+
+        // Manejo de Cursor (Caret)
+        function saveCaret(editor) {
+            const sel = window.getSelection();
+            if (sel.rangeCount > 0 && editor.contains(sel.focusNode)) {
+                const range = sel.getRangeAt(0);
+                const s = document.createElement('span'); s.id = 'caret-start';
+                const e = document.createElement('span'); e.id = 'caret-end';
+                const rEnd = range.cloneRange(); rEnd.collapse(false); rEnd.insertNode(e);
+                const rStart = range.cloneRange(); rStart.collapse(true); rStart.insertNode(s);
+            }
+        }
+        function restoreCaret(editor) {
+            const s = editor.querySelector('#caret-start'), e = editor.querySelector('#caret-end');
+            if (s && e) {
+                const sel = window.getSelection(); const range = document.createRange();
+                range.setStartAfter(s); range.setEndBefore(e); sel.removeAllRanges(); sel.addRange(range);
+                s.remove(); e.remove();
+            } else { if(s) s.remove(); if(e) e.remove(); }
+        }
+
+        // Estadísticas Globales
+        function updateGlobalStats() {
+            let tW = 0, eS = 0;
+            document.querySelectorAll('.section-editor').forEach(ed => {
+                const textToCount = ed.innerText.trim().replace(/\[[\s\S]*?\]/g, '');
+                eS += (textToCount.match(/===/g) ? textToCount.match(/===/g).length : 0) * 5;
+                const wordsMatch = textToCount.replace(/===/g, '').match(/\S+/g);
+                tW += wordsMatch ? wordsMatch.length : 0;
+            });
+
+            document.getElementById('word-count').textContent = `${tW} palabras en total`;
+            const scriptSeconds = Math.floor((tW / currentWPM) * 60) + eS;
+            document.getElementById('script-time').textContent = `Lectura: ${String(Math.floor(scriptSeconds/60)).padStart(2,'0')}:${String(scriptSeconds%60).padStart(2,'0')}`;
+
+            let clipsSecs = 0;
+            const note = notes.find(n => n.id === currentNoteId);
+            if (note && note.videos) clipsSecs = note.videos.reduce((tot, v) => tot + v.durationSecs, 0);
+            document.getElementById('clips-time').textContent = `Clips: ${String(Math.floor(clipsSecs/60)).padStart(2,'0')}:${String(clipsSecs%60).padStart(2,'0')}`;
+
+            const total = scriptSeconds + clipsSecs;
+            document.getElementById('total-time').textContent = `Total: ${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+        }
+
+        // --- VIDEOS Y RESTO DE BOTONES ---
+        document.getElementById('btn-add-video').addEventListener('click', () => {
+            const n = document.getElementById('vid-name').value.trim() || 'Clip';
+            const m = parseInt(document.getElementById('vid-min').value) || 0;
+            const s = parseInt(document.getElementById('vid-sec').value) || 0;
+            if (m===0 && s===0) return; 
+            const note = notes.find(n => n.id === currentNoteId);
+            if(note) { note.videos.push({ id: Date.now().toString(), name: n, durationSecs: (m*60)+s }); triggerMasterSave(true); renderVideoList(); updateGlobalStats(); }
+        });
 
         function renderVideoList() {
-            videoListUI.innerHTML = '';
+            const ul = document.getElementById('video-list'); ul.innerHTML = '';
             const note = notes.find(n => n.id === currentNoteId);
-            if (!note || !note.videos || note.videos.length === 0) {
-                videoListUI.innerHTML = '<li style="text-align: center; opacity: 0.5; font-size: 0.85rem; margin-top: 20px;">No hay clips añadidos</li>';
-                return;
-            }
-
-            note.videos.forEach(vid => {
-                const mins = Math.floor(vid.durationSecs / 60);
-                const secs = vid.durationSecs % 60;
-                const formattedTime = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-
-                const li = document.createElement('li');
-                li.className = 'video-item';
-                li.innerHTML = `
-                    <div class="video-info">
-                        <span class="video-name" title="${vid.name}">${vid.name}</span>
-                        <span class="video-dur">⏱ ${formattedTime}</span>
-                    </div>
-                    <button class="video-del" onclick="deleteVideoObj('${vid.id}')" title="Eliminar clip">✕</button>
-                `;
-                videoListUI.appendChild(li);
+            if (!note || !note.videos || note.videos.length === 0) return;
+            note.videos.forEach(v => {
+                const li = document.createElement('li'); li.className = 'video-item';
+                li.innerHTML = `<div><b>${v.name}</b> <span style="color:var(--accent-color);font-size:0.8em">⏱ ${String(Math.floor(v.durationSecs/60)).padStart(2,'0')}:${String(v.durationSecs%60).padStart(2,'0')}</span></div><button class="video-del" onclick="deleteVideoObj('${v.id}')">✕</button>`;
+                ul.appendChild(li);
             });
         }
+        window.deleteVideoObj = (id) => { const n = notes.find(n=>n.id===currentNoteId); if(n){ n.videos=n.videos.filter(v=>v.id!==id); triggerMasterSave(true); renderVideoList(); updateGlobalStats(); }};
 
-        // --- SISTEMA DE RESALTADO VISUAL PARA [ ] Y === ---
-        function applySyntaxHighlighting() {
-            if (modeSelect.value !== 'editor') return;
-
-            const sel = window.getSelection();
-            const hasSelection = sel.rangeCount > 0 && editor.contains(sel.focusNode);
-            
-            if (hasSelection) {
-                const range = sel.getRangeAt(0);
-                const startMarker = document.createElement('span');
-                startMarker.id = 'caret-start';
-                const endMarker = document.createElement('span');
-                endMarker.id = 'caret-end';
-                
-                const rangeEnd = range.cloneRange();
-                rangeEnd.collapse(false);
-                rangeEnd.insertNode(endMarker);
-                
-                const rangeStart = range.cloneRange();
-                rangeStart.collapse(true);
-                rangeStart.insertNode(startMarker);
-            }
-
-            const ghostSpans = editor.querySelectorAll('.ghost-text');
-            ghostSpans.forEach(span => {
-                const parent = span.parentNode;
-                while(span.firstChild) parent.insertBefore(span.firstChild, span);
-                parent.removeChild(span);
-            });
-            editor.normalize();
-
-            let html = editor.innerHTML;
-            const newHtml = html.replace(/(<[^>]+>)|(\[[\s\S]*?\]|===)/g, function(match, tag, special) {
-                if (tag) return tag; 
-                if (special) return `<span class="ghost-text">${special}</span>`; 
-                return match;
-            });
-
-            if (html !== newHtml) {
-                editor.innerHTML = newHtml;
-            }
-
-            if (hasSelection) {
-                const startMarker = document.getElementById('caret-start');
-                const endMarker = document.getElementById('caret-end');
-                
-                if (startMarker && endMarker) {
-                    const range = document.createRange();
-                    range.setStartAfter(startMarker);
-                    range.setEndBefore(endMarker);
-                    
-                    sel.removeAllRanges();
-                    sel.addRange(range);
-                    
-                    startMarker.remove();
-                    endMarker.remove();
-                } else if (startMarker) {
-                    startMarker.remove();
-                } else if (endMarker) {
-                    endMarker.remove();
-                }
-            }
-        }
-
-        // --- CÁLCULOS Y ESTADÍSTICAS ---
-        function updateStats() {
-            const rawText = editor.innerText.trim();
-            const textToCount = rawText.replace(/\[[\s\S]*?\]/g, '');
-
-            const pauseMatch = textToCount.match(/===/g);
-            const extraSeconds = (pauseMatch ? pauseMatch.length : 0) * 5;
-
-            const cleanText = textToCount.replace(/===/g, '');
-            const wordsMatch = cleanText.match(/\S+/g);
-            const words = wordsMatch ? wordsMatch.length : 0;
-
-            document.getElementById('word-count').textContent = `${words} palabras narradas`;
-
-            const scriptSeconds = Math.floor((words / currentWPM) * 60) + extraSeconds;
-            const scriptMins = Math.floor(scriptSeconds / 60);
-            const scriptSecs = scriptSeconds % 60;
-            document.getElementById('script-time').textContent = `Lectura: ${String(scriptMins).padStart(2, '0')}:${String(scriptSecs).padStart(2, '0')}`;
-
-            let clipsSeconds = 0;
-            const note = notes.find(n => n.id === currentNoteId);
-            if (note && note.videos) {
-                clipsSeconds = note.videos.reduce((total, vid) => total + vid.durationSecs, 0);
-            }
-            const clipsMins = Math.floor(clipsSeconds / 60);
-            const clipsSecs = clipsSeconds % 60;
-            document.getElementById('clips-time').textContent = `Clips: ${String(clipsMins).padStart(2, '0')}:${String(clipsSecs).padStart(2, '0')}`;
-
-            const totalSeconds = scriptSeconds + clipsSeconds;
-            const totalMins = Math.floor(totalSeconds / 60);
-            const totalSecs = totalSeconds % 60;
-            document.getElementById('total-time').textContent = `Total: ${String(totalMins).padStart(2, '0')}:${String(totalSecs).padStart(2, '0')}`;
-        }
-
-        // --- SISTEMA DE TIEMPO DEL TEXTO SELECCIONADO ---
-        document.addEventListener('selectionchange', () => {
-            if (!modal.classList.contains('active')) return;
-
-            const selection = window.getSelection();
-            if (!selection.rangeCount) return;
-
-            const range = selection.getRangeAt(0);
-            
-            if (!editor.contains(range.commonAncestorContainer)) {
-                selectedTimeDisplay.style.display = 'none';
-                return;
-            }
-
-            const rawText = selection.toString().trim();
-            
-            if (rawText.length === 0) {
-                selectedTimeDisplay.style.display = 'none';
-                return;
-            }
-
-            const textToCount = rawText.replace(/\[[\s\S]*?\]/g, '');
-            const pauseMatch = textToCount.match(/===/g);
-            const extraSeconds = (pauseMatch ? pauseMatch.length : 0) * 5;
-            const cleanText = textToCount.replace(/===/g, '');
-            const wordsMatch = cleanText.match(/\S+/g);
-            const words = wordsMatch ? wordsMatch.length : 0;
-
-            const selectedSeconds = Math.floor((words / currentWPM) * 60) + extraSeconds;
-            const mins = Math.floor(selectedSeconds / 60);
-            const secs = selectedSeconds % 60;
-
-            selectedTimeDisplay.textContent = `Selección: ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-            selectedTimeDisplay.style.display = 'block';
-        });
-
-        // --- INTERFAZ Y EVENTOS BÁSICOS ---
-        modeSelect.addEventListener('change', (e) => {
-            if (e.target.value === 'lectura') {
-                modalContent.classList.add('mode-lectura');
-                editor.setAttribute('contenteditable', 'false');
-            } else {
-                modalContent.classList.remove('mode-lectura');
-                editor.setAttribute('contenteditable', 'true');
-            }
-        });
-
-        editor.addEventListener('paste', function(e) {
-            e.preventDefault();
-            const text = (e.originalEvent || e).clipboardData.getData('text/plain');
-            document.execCommand('insertText', false, text);
-        });
-
-        editorWrapper.addEventListener('mousedown', function(e) {
-            if (modeSelect.value === 'editor' && e.target === editorWrapper) {
-                e.preventDefault();
-                editor.focus();
-
-                let range = null;
-                if (document.caretRangeFromPoint) { 
-                    range = document.caretRangeFromPoint(e.clientX, e.clientY);
-                } else if (document.caretPositionFromPoint) { 
-                    const pos = document.caretPositionFromPoint(e.clientX, e.clientY);
-                    if (pos) {
-                        range = document.createRange();
-                        range.setStart(pos.offsetNode, pos.offset);
-                        range.collapse(true);
-                    }
-                }
-
-                const sel = window.getSelection();
-                if (range) {
-                    sel.removeAllRanges();
-                    sel.addRange(range);
-                } else if (editor.innerText.trim() !== '') {
-                    const fallbackRange = document.createRange();
-                    fallbackRange.selectNodeContents(editor);
-                    fallbackRange.collapse(false);
-                    sel.removeAllRanges();
-                    sel.addRange(fallbackRange);
-                }
-            }
-        });
-
-        editor.addEventListener('keydown', (e) => {
-            if (e.ctrlKey || e.metaKey) {
-                const key = e.key.toLowerCase();
-                if (key === 'b') { e.preventDefault(); format('bold'); }
-                if (key === 'i') { e.preventDefault(); format('italic'); }
-                if (key === 'u') { e.preventDefault(); format('underline'); }
-            }
-
-            if (e.key === 'Enter') {
-                const formatNode = document.queryCommandValue('formatBlock');
-                if (formatNode === 'h1' || formatNode === 'h2' || formatNode === 'h3') {
-                    setTimeout(() => format('formatBlock', 'div'), 10);
-                }
-            }
-        });
-
-        function triggerAutoSave(immediate = false) {
-            saveStatus.textContent = "Guardando...";
-            clearTimeout(autoSaveTimer);
-            const saveFunc = () => {
-                applySyntaxHighlighting();
-                
-                const noteIndex = notes.findIndex(n => n.id === currentNoteId);
-                if (noteIndex !== -1) {
-                    notes[noteIndex].title = noteTitle.value;
-                    notes[noteIndex].content = editor.innerHTML;
-                    notes[noteIndex].updatedAt = Date.now();
-                    saveToLocal(); // Esto empuja los cambios a Firebase
-                }
-                saveStatus.textContent = "Guardado";
-                updateStats();
-            };
-            if (immediate) saveFunc();
-            else autoSaveTimer = setTimeout(saveFunc, 800);
-        }
-
-        // --- SISTEMA DE GUARDADO CONECTADO A FIREBASE ---
-        function saveToLocal() { 
-            // 1. Guardar localmente
-            localStorage.setItem('yt-pro-notes', JSON.stringify(notes)); 
-            
-            // 2. Empujar a la nube
-            if(syncStatus) syncStatus.textContent = "☁️ Subiendo...";
-            dbRef.set(notes)
-                .then(() => {
-                    if(syncStatus) {
-                        syncStatus.textContent = "☁️ Sincronizado";
-                        setTimeout(() => syncStatus.textContent = "", 2000);
-                    }
-                })
-                .catch((error) => {
-                    // Si falla por falta de internet, Firebase lo encola automáticamente
-                    if(syncStatus) syncStatus.textContent = "🔌 Modo Offline";
-                });
-        }
-
-        function format(command, value = null) {
-            document.execCommand(command, false, value);
-            editor.focus();
-            triggerAutoSave();
-        }
-
+        document.getElementById('btn-maximize').addEventListener('click', () => modalContent.classList.toggle('maximized'));
+        document.getElementById('btn-toggle-video').addEventListener('click', () => document.getElementById('video-panel').classList.toggle('active'));
         document.getElementById('btn-new-note').addEventListener('click', () => createNewNote(true));
-        document.getElementById('btn-close-modal').addEventListener('click', closeNoteModal);
+        noteTitle.addEventListener('input', () => triggerMasterSave());
         
-        modal.addEventListener('click', (e) => { if (e.target === modal) closeNoteModal(); });
-        editor.addEventListener('input', () => triggerAutoSave());
-        noteTitle.addEventListener('input', () => triggerAutoSave());
-
-        document.getElementById('pace-select').addEventListener('change', (e) => {
-            currentWPM = parseInt(e.target.value);
-            localStorage.setItem('yt-pro-pace', currentWPM);
-            updateStats();
-            
-            const selection = window.getSelection();
-            if(selection.toString().trim().length > 0 && modal.classList.contains('active')) {
-                document.dispatchEvent(new Event('selectionchange'));
-            }
+        function format(command, val=null) { document.execCommand(command, false, val); triggerMasterSave(); }
+        function handlePaste(e) { e.preventDefault(); document.execCommand('insertText', false, (e.originalEvent||e).clipboardData.getData('text/plain')); }
+        
+        // --- BACKUP MANUAL (POR SI ACASO) ---
+        const btnExp = document.getElementById('btn-export-side');
+        if(!btnExp.onclick) btnExp.addEventListener('click', () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({notes, pace: currentWPM}, null, 2));
+            const a = document.createElement('a'); a.href = dataStr; a.download = `YT_ScriptPro_Full_Backup.json`; document.body.appendChild(a); a.click(); a.remove();
         });
+        document.getElementById('btn-import-side').addEventListener('click', () => document.getElementById('import-file').click());
 
-        document.getElementById('font-size').addEventListener('change', (e) => {
-            const newSize = e.target.value;
-            editor.style.fontSize = newSize;
-            localStorage.setItem('yt-pro-fontsize', newSize);
-        });
     </script>
 </body>
 </html>
