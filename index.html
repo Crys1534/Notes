@@ -583,7 +583,7 @@
                         // 3. Mostrar estado
                         if(syncStatus) syncStatus.textContent = "☁️ Subiendo backup...";
                         
-                        // 4. ESPERAR a que Firebase termine de guardar (clave para evitar que falle)
+                        // 4. ESPERAR a que Firebase termine de guardar
                         await dbRef.set(compressedString); 
                     }
                     
@@ -597,9 +597,9 @@
                         document.getElementById('font-size').value = data.fontsize;
                     }
                     
-                    // 5. Actualizar la interfaz sin recargar la página web
+                    // 5. Actualizar la interfaz
                     renderAllUIs();
-                    updateGlobalStats();
+                    updateStats(); // <--- EL ERROR ESTABA AQUÍ (antes decía updateGlobalStats)
                     
                     if(syncStatus) {
                         syncStatus.textContent = "☁️ Sincronizado";
@@ -619,7 +619,7 @@
             };
             reader.readAsText(file);
         }
-
+		
         // --- INTERFAZ UI ---
         document.getElementById('btn-hamburger').addEventListener('click', () => sidebar.classList.toggle('collapsed'));
         
