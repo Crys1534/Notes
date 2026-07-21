@@ -573,16 +573,48 @@
                     if (data.notes && Array.isArray(data.notes)) {
                         notes = data.notes;
                         verifyAndMigrate();
+                        
+                        // 1. Comprimir
                         const compressedString = LZString.compressToUTF16(JSON.stringify(notes));
+                        
+                        // 2. Guardar localmente
                         await setLocalVault('compressed_notes', compressedString);
-                        dbRef.set(compressedString); 
+                        
+                        // 3. Mostrar estado
+                        if(syncStatus) syncStatus.textContent = "☁️ Subiendo backup...";
+                        
+                        // 4. ESPERAR a que Firebase termine de guardar (clave para evitar que falle)
+                        await dbRef.set(compressedString); 
                     }
-                    if (data.pace) localStorage.setItem('yt-pro-pace', data.pace);
-                    if (data.fontsize) localStorage.setItem('yt-pro-fontsize', data.fontsize);
+                    
+                    if (data.pace) {
+                        currentWPM = data.pace;
+                        localStorage.setItem('yt-pro-pace', data.pace);
+                        document.getElementById('pace-select').value = data.pace;
+                    }
+                    if (data.fontsize) {
+                        localStorage.setItem('yt-pro-fontsize', data.fontsize);
+                        document.getElementById('font-size').value = data.fontsize;
+                    }
+                    
+                    // 5. Actualizar la interfaz sin recargar la página web
+                    renderAllUIs();
+                    updateGlobalStats();
+                    
+                    if(syncStatus) {
+                        syncStatus.textContent = "☁️ Sincronizado";
+                        setTimeout(() => syncStatus.textContent = "", 3000);
+                    }
+                    
+                    // Cerrar la ventana de configuración automáticamente
+                    document.getElementById('settings-modal').classList.remove('active');
                     
                     alert('✅ Backup restaurado y sincronizado con éxito.');
-                    location.reload();
-                } catch (err) { alert('❌ Error: El archivo no es válido.'); }
+                    
+                } catch (err) { 
+                    alert('❌ Error: El archivo no es válido o está dañado.'); 
+                    console.error(err);
+                }
                 importFileInput.value = ''; 
             };
             reader.readAsText(file);
