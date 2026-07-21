@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YT Script Writer Pro v14.4 - Bug Fixes & Mobile Fullscreen</title>
+    <title>YT Script Writer Pro v14.5 - Aa Button & Opacity Fix</title>
     
     <!-- PWA Manifest & Theme -->
     <link rel="manifest" href="./manifest.json">
@@ -30,6 +30,10 @@
             --toolbar-bg: #2d2d2d; 
             --card-hover: #2a2a2a;
             --success-color: #32ff7e; 
+            
+            /* Variables del Sidebar */
+            --sidebar-width-expanded: 260px;
+            --sidebar-width-collapsed: 65px;
         }
 
         * { box-sizing: border-box; transition: background-color 0.2s, border-color 0.2s; }
@@ -49,16 +53,48 @@
         .skel-text { height: 14px; margin-bottom: 12px; width: 100%; }
         .skel-text.short { width: 60%; }
         .skel-title { height: 22px; width: 80%; margin-bottom: 20px; }
-        .skel-card { padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); background-color: var(--surface-color); height: 250px; display: flex; flex-direction: column; }
+        .skel-card { 
+            padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); 
+            background-color: var(--surface-color); height: 250px; display: flex; flex-direction: column;
+        }
         .skel-footer { margin-top: auto; height: 12px; width: 40%; }
+        .skel-sidebar-item { display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-bottom: 1px solid var(--border-color); }
+        .skel-icon { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; }
 
         /* --- BOTONES Y CONTROLES --- */
-        button, select, input { background-color: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 6px; outline: none; cursor: pointer; font-family: inherit; }
+        button, select, input {
+            background-color: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color);
+            padding: 6px 12px; border-radius: 6px; outline: none; cursor: pointer; font-family: inherit;
+        }
         button:hover { filter: brightness(1.2); }
         .btn-primary { background-color: var(--accent-color); color: #fff; border: none; font-weight: bold; padding: 10px 20px; font-size: 1rem; }
         .btn-small { padding: 4px 8px; font-size: 0.85rem; }
         .btn-secondary { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); font-weight: bold; padding: 10px 20px; font-size: 1rem; }
         .btn-secondary:hover { background: var(--toolbar-bg); }
+
+        /* --- BARRA LATERAL (SIDEBAR) --- */
+        #sidebar {
+            width: var(--sidebar-width-expanded); background-color: var(--surface-color);
+            border-right: 1px solid var(--border-color); display: flex; flex-direction: column;
+            transition: width 0.3s ease; z-index: 50;
+        }
+        #sidebar.collapsed { width: var(--sidebar-width-collapsed); }
+        
+        .sidebar-header { padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px; white-space: nowrap; overflow: hidden; }
+        .btn-hamburger { background: transparent; border: none; font-size: 1.5rem; color: var(--text-color); padding: 0; display: flex; justify-content: center; width: 30px; }
+        .sidebar-title { font-weight: bold; font-size: 1.2rem; }
+        
+        .sidebar-notes-list { flex: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
+        .sidebar-note-item { padding: 12px 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid var(--border-color); overflow: hidden; white-space: nowrap; }
+        .sidebar-note-item:hover { background-color: var(--toolbar-bg); }
+        .note-icon { width: 30px; text-align: center; font-size: 1.2rem; }
+        
+        .sidebar-tools { padding: 10px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .btn-side-tool { display: flex; align-items: center; gap: 15px; background: transparent; border: 1px solid var(--border-color); padding: 10px; color: var(--text-color); font-weight: bold; justify-content: flex-start; overflow: hidden; white-space: nowrap; }
+        .btn-side-tool:hover { background: var(--toolbar-bg); }
+
+        #sidebar.collapsed .sidebar-title, #sidebar.collapsed .tool-label, #sidebar.collapsed .sidebar-note-title { opacity: 0; pointer-events: none; display: none; }
+        #sidebar.collapsed .sidebar-note-item, #sidebar.collapsed .btn-side-tool { justify-content: center; padding-left: 0; padding-right: 0; }
 
         /* --- CONTENEDOR PRINCIPAL --- */
         #main-container { flex: 1; display: flex; flex-direction: column; position: relative; overflow-y: auto; width: 100%; }
@@ -105,7 +141,7 @@
                 width: 100% !important; max-width: 100% !important; height: 100% !important;
                 border-radius: 0 !important; border: none !important; transform: translateY(0);
             }
-            #btn-maximize { display: none !important; } /* Ocultar botón de maximizar en móviles */
+            #btn-maximize { display: none !important; } 
         }
 
         #settings-modal .modal-content { width: 95%; max-width: 500px; height: auto; max-height: 90vh; border-radius: 12px; border: 1px solid var(--border-color); }
@@ -134,14 +170,21 @@
         .editor u { text-decoration-color: var(--accent-color); text-decoration-thickness: 2px; }
         .editor font[face="Consolas"] { font-family: 'Consolas', monospace; background-color: var(--surface-color) !important; padding: 2px 6px; border-radius: 4px; }
 
-        /* EFECTO DE 85% DE TRANSPARENCIA PARA LOS [ ] Y === */
-        .editor span.ghost-text, .editor span.ghost-text * { color: #8a8a8a !important; font-style: italic !important; opacity: 0.15 !important; transition: opacity 0.2s; }
-        .editor span.ghost-text:hover { opacity: 0.8 !important; } /* Se vuelve legible al pasar el mouse por si ocupas leerlo */
+        /* OPACIDAD AL 10% SÓLO PARA CORCHETES Y PAUSAS */
+        .editor span.ghost-text { 
+            opacity: 0.1 !important; 
+            transition: opacity 0.2s; 
+            font-weight: normal; 
+            font-style: normal; 
+        }
+        .editor span.ghost-text:hover { opacity: 0.8 !important; }
 
         /* --- PANELES SECUNDARIOS --- */
         .video-panel { width: 320px; background-color: var(--toolbar-bg); border-left: 1px solid var(--border-color); display: none; flex-direction: column; }
         .video-panel.active { display: flex; }
-        @media (max-width: 768px) { .video-panel { width: 100%; height: 40%; border-left: none; border-top: 1px solid var(--border-color); } }
+        @media (max-width: 768px) {
+            .video-panel { width: 100%; height: 40%; border-left: none; border-top: 1px solid var(--border-color); }
+        }
         
         .video-panel-header { padding: 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; }
         .video-list { flex: 1; overflow-y: auto; padding: 15px; list-style: none; margin: 0; display: flex; flex-direction: column; gap: 10px; }
@@ -183,6 +226,20 @@
         <h2>📥 Suelta tu archivo aquí</h2>
         <p>Restauraremos tu copia de seguridad al instante.</p>
     </div>
+
+    <!-- BARRA LATERAL -->
+    <aside id="sidebar" class="expanded">
+        <div class="sidebar-header">
+            <button class="btn-hamburger" id="btn-hamburger">☰</button>
+            <span class="sidebar-title">Menú Principal</span>
+        </div>
+        
+        <ul class="sidebar-notes-list" id="sidebar-notes-list">
+            <li class="skel-sidebar-item"><div class="skeleton skel-icon"></div><div class="skeleton skel-text" style="margin:0;"></div></li>
+            <li class="skel-sidebar-item"><div class="skeleton skel-icon"></div><div class="skeleton skel-text" style="margin:0; width:60%"></div></li>
+            <li class="skel-sidebar-item"><div class="skeleton skel-icon"></div><div class="skeleton skel-text" style="margin:0; width:80%"></div></li>
+        </ul>
+    </aside>
 
     <!-- CONTENEDOR PRINCIPAL -->
     <div id="main-container">
@@ -248,18 +305,18 @@
                         </div>
 
                         <div class="toolbar" id="toolbar">
-                            <button onmousedown="event.preventDefault(); format('bold')"><b>B</b></button>
-                            <button onmousedown="event.preventDefault(); format('italic')"><i>I</i></button>
-                            <button onmousedown="event.preventDefault(); format('underline')"><u>U</u></button>
+                            <button onmousedown="event.preventDefault(); format('bold')" title="Negrita"><b>B</b></button>
+                            <button onmousedown="event.preventDefault(); format('italic')" title="Cursiva"><i>I</i></button>
+                            <button onmousedown="event.preventDefault(); format('underline')" title="Subrayado"><u>U</u></button>
                             <span style="border-right: 1px solid var(--border-color); height: 20px; margin: 0 5px;"></span>
-                            <button onmousedown="event.preventDefault(); format('formatBlock', 'H1')">H1</button>
-                            <button onmousedown="event.preventDefault(); format('formatBlock', 'H2')">H2</button>
-                            <button onmousedown="event.preventDefault(); format('formatBlock', 'H3')">H3</button>
+                            <button onmousedown="event.preventDefault(); format('formatBlock', 'H1')" title="Título 1">H1</button>
+                            <button onmousedown="event.preventDefault(); format('formatBlock', 'H2')" title="Título 2">H2</button>
+                            <button onmousedown="event.preventDefault(); format('formatBlock', 'H3')" title="Título 3">H3</button>
                             <span style="border-right: 1px solid var(--border-color); height: 20px; margin: 0 5px;"></span>
                             
-                            <!-- BOTÓN DE TEXTO NORMAL -->
-                            <button onmousedown="event.preventDefault(); format('formatBlock', 'div')" title="Texto Normal">Normal</button>
-                            <button onmousedown="event.preventDefault(); format('fontName', 'Consolas')">&lt;/&gt;</button>
+                            <!-- BOTÓN DE LIMPIAR FORMATO (Aa) -->
+                            <button onmousedown="event.preventDefault(); clearFormatting()" title="Quitar formatos (Texto Normal)">Aa</button>
+                            <button onmousedown="event.preventDefault(); format('fontName', 'Consolas')" title="Código">&lt;/&gt;</button>
                             <span style="flex: 1;"></span>
                             
                             <select id="font-size">
@@ -306,7 +363,7 @@
 
         <!-- MODAL CONFIGURACIÓN -->
         <div class="modal-overlay" id="settings-modal">
-            <div class="modal-content" style="width: 95%; max-width: 500px; height: auto; max-height: 90vh; border-radius: 12px;">
+            <div class="modal-content" style="height: auto;">
                 <div class="modal-header">
                     <h2 style="margin:0; font-size: 1.5rem;">⚙️ Configuración</h2>
                     <button class="btn-icon-head" id="btn-close-settings">✕</button>
@@ -365,10 +422,12 @@
         }
 
         // --- REFERENCIAS DEL DOM ---
+        const sidebar = document.getElementById('sidebar');
         const editor = document.getElementById('editor');
         const editorWrapper = document.getElementById('editor-wrapper');
         const noteTitle = document.getElementById('note-title');
         const notesGridUI = document.getElementById('notes-grid');
+        const sidebarListUI = document.getElementById('sidebar-notes-list');
         const syncStatus = document.getElementById('sync-status');
         const modal = document.getElementById('editor-modal');
         const modalContent = document.getElementById('modal-content');
@@ -381,6 +440,7 @@
         let currentNoteId = null;
         let currentWPM = parseInt(localStorage.getItem('yt-pro-pace')) || 145;
         let autoSaveTimer;
+        let lastEditorState = ""; // EVITA REDIBUJAR SI NO HAY CAMBIOS EN EL TEXTO
 
         // --- 3. INICIALIZACIÓN Y SINCRONIZACIÓN ---
         async function bootApp() {
@@ -433,7 +493,11 @@
                 if (currentNoteId) {
                     const note = notes.find(n => n.id === currentNoteId);
                     if (note) {
-                        applySyntaxHighlighting();
+                        // SOLUCIÓN DE SALTOS: Solo analizar el texto si el contenido del editor cambió
+                        if (editor.innerHTML !== lastEditorState) {
+                            applySyntaxHighlighting();
+                            lastEditorState = editor.innerHTML;
+                        }
                         note.title = noteTitle.value;
                         note.content = editor.innerHTML;
                         note.updatedAt = Date.now();
@@ -445,6 +509,7 @@
                 const compressedString = LZString.compressToUTF16(jsonString);
                 
                 await setLocalVault('compressed_notes', compressedString);
+                renderSidebarList(); 
                 
                 syncStatus.textContent = "☁️ Subiendo...";
                 dbRef.set(compressedString)
@@ -538,6 +603,8 @@
         document.getElementById('btn-settings').addEventListener('click', () => settingsModal.classList.add('active'));
         document.getElementById('btn-close-settings').addEventListener('click', () => settingsModal.classList.remove('active'));
 
+        document.getElementById('btn-hamburger').addEventListener('click', () => sidebar.classList.toggle('collapsed'));
+
         modeSelect.addEventListener('change', (e) => {
             if (e.target.value === 'lectura') {
                 modalContent.classList.add('mode-lectura'); editor.setAttribute('contenteditable', 'false');
@@ -546,7 +613,22 @@
             }
         });
 
-        function renderAllUIs() { renderNotesGrid(); }
+        function renderAllUIs() {
+            renderNotesGrid();
+            renderSidebarList();
+        }
+
+        function renderSidebarList() {
+            sidebarListUI.innerHTML = '';
+            const sortedNotes = [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
+            sortedNotes.forEach(note => {
+                const li = document.createElement('li');
+                li.className = 'sidebar-note-item';
+                li.onclick = () => openNoteModal(note.id);
+                li.innerHTML = `<div class="note-icon">📝</div><div class="sidebar-note-title">${note.title || 'Sin Título'}</div>`;
+                sidebarListUI.appendChild(li);
+            });
+        }
 
         function renderNotesGrid() {
             notesGridUI.innerHTML = '';
@@ -597,6 +679,7 @@
                 editor.style.fontSize = fontSelect.value;
                 
                 applySyntaxHighlighting();
+                lastEditorState = editor.innerHTML; // Seteamos el estado inicial
                 updateStats();
                 document.getElementById('selected-time').style.display = 'none';
                 editor.focus();
@@ -639,13 +722,12 @@
             }
         });
 
-        // NUEVO SISTEMA DE HIGHLIGHTING (SIN DESTRUIR EL DOM)
+        // NUEVO SISTEMA DE HIGHLIGHTING (10% OPACIDAD SÓLO EN CORCHETES)
         function applySyntaxHighlighting() {
             if (modeSelect.value !== 'editor') return;
             const sel = window.getSelection();
             const hasSelection = sel.rangeCount > 0 && editor.contains(sel.focusNode);
             
-            // 1. Guardar Caret
             if (hasSelection) {
                 const range = sel.getRangeAt(0);
                 const s = document.createElement('span'); s.id = 'caret-start';
@@ -654,7 +736,6 @@
                 const rStart = range.cloneRange(); rStart.collapse(true); rStart.insertNode(s);
             }
 
-            // 2. Limpiar ghost spans sin romper nada
             editor.querySelectorAll('.ghost-text').forEach(span => {
                 const frag = document.createDocumentFragment();
                 while(span.firstChild) frag.appendChild(span.firstChild);
@@ -662,39 +743,11 @@
             });
             editor.normalize();
 
-            // 3. Aplicar nuevos ghost spans solo a nodos de texto
-            const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null, false);
-            const textNodes = [];
-            let node;
-            while(node = walker.nextNode()) {
-                if (node.parentNode.id === 'caret-start' || node.parentNode.id === 'caret-end') continue;
-                textNodes.push(node);
-            }
+            let html = editor.innerHTML;
+            // Sólo aplicamos la clase a los símbolos literales [, ], y ===
+            const newHtml = html.replace(/(<[^>]+>)|(\[|\]|===)/g, (match, tag, special) => tag ? tag : `<span class="ghost-text">${special}</span>`);
+            if (html !== newHtml) editor.innerHTML = newHtml;
 
-            textNodes.forEach(textNode => {
-                const text = textNode.nodeValue;
-                const regex = /(\[[\s\S]*?\]|===)/g;
-                if (regex.test(text)) {
-                    const frag = document.createDocumentFragment();
-                    let lastIndex = 0;
-                    text.replace(regex, (match, p1, offset) => {
-                        if (offset > lastIndex) {
-                            frag.appendChild(document.createTextNode(text.substring(lastIndex, offset)));
-                        }
-                        const span = document.createElement('span');
-                        span.className = 'ghost-text';
-                        span.textContent = match;
-                        frag.appendChild(span);
-                        lastIndex = offset + match.length;
-                    });
-                    if (lastIndex < text.length) {
-                        frag.appendChild(document.createTextNode(text.substring(lastIndex)));
-                    }
-                    textNode.parentNode.replaceChild(frag, textNode);
-                }
-            });
-
-            // 4. Restaurar Caret
             if (hasSelection) {
                 const s = document.getElementById('caret-start'), e = document.getElementById('caret-end');
                 if (s && e) {
@@ -791,6 +844,14 @@
                 }
             }
         });
+
+        // Función Limpiadora (Botón Aa)
+        function clearFormatting() {
+            document.execCommand('removeFormat', false, null);
+            document.execCommand('formatBlock', false, 'div');
+            editor.focus();
+            triggerMasterSave();
+        }
 
         function format(command, val=null) { document.execCommand(command, false, val); editor.focus(); triggerMasterSave(); }
         editor.addEventListener('paste', e => { e.preventDefault(); document.execCommand('insertText', false, (e.originalEvent||e).clipboardData.getData('text/plain')); });
